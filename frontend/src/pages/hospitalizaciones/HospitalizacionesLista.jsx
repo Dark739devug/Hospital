@@ -13,6 +13,7 @@ import { useApi } from '../../hooks/useApi.js'
 import { useDatosHospitalizacion } from '../../hooks/useDatosHospitalizacion.js'
 import { formatearFechaHora } from '../../utils/formato.js'
 import { nombreMedico, nombrePaciente } from '../citas/utilsCita.js'
+import CensoHabitaciones from './CensoHabitaciones.jsx'
 import { estaActiva, nombreHabitacion } from './utilsHospitalizacion.js'
 
 const TAMANO_PAGINA = 10
@@ -106,7 +107,7 @@ export default function HospitalizacionesLista() {
       <div className="card card-body d-flex flex-column flex-md-row align-items-md-center justify-content-md-between">
         <div>
           <h1 className="h3 mb-0">Hospitalizaciones</h1>
-          <p className="text-muted mb-0">Ingreso, seguimiento y alta de pacientes hospitalizados.</p>
+          <p className="text-muted mb-0">Ocupación de camas por habitación, enfermería asignada, ingresos y altas.</p>
         </div>
         {puedeCrear && (
           <Link
@@ -121,6 +122,9 @@ export default function HospitalizacionesLista() {
       <ErrorAlert tipo="exito" mensaje={exito} onCerrar={() => setExito('')} />
       <ErrorAlert mensaje={error?.message} />
 
+      <CensoHabitaciones datos={datos} hospitalizaciones={lista} puedeIngresar={puedeCrear} />
+
+      <h2 className="h5 mb-3">Hospitalizaciones</h2>
       <Table
         columnas={columnas}
         filas={filas.slice((pagina - 1) * TAMANO_PAGINA, pagina * TAMANO_PAGINA)}

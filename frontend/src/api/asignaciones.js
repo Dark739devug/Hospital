@@ -2,6 +2,8 @@ import client from './client.js'
 import { RUTAS } from './rutas.js'
 
 // Asignación = enfermero + hospitalización + fecha + turno. Escritura solo ADMIN.
+/** GET /api/asignacion-enfermeros: todas las asignaciones (lectura: ADMIN, MEDICO, ENFERMERO, RECEPCIONISTA). */
+export const listarAsignaciones = () => client.get(RUTAS.asignacionEnfermeros).then((r) => r.data)
 /** Con soloActivas=true el servidor omite las asignaciones quitadas (borrado lógico). */
 export const listarAsignacionesDeHospitalizacion = (idHospitalizacion, { soloActivas } = {}) =>
   client
