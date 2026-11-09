@@ -4,7 +4,7 @@ API del sistema de gestión hospitalaria (Spring Boot). Esta guía está pensada
 
 - **Total de endpoints documentados: 220** (98 GET, 42 POST, 35 PUT, 7 PATCH y 38 DELETE) repartidos en 40 controladores.
 - Formato: JSON (`Content-Type: application/json`), codificación UTF-8.
-- Dirección base en desarrollo: `http://localhost:8080`. En producción: [COMPLETAR: URL de la API en Render].
+- Dirección base en desarrollo: `http://localhost:8080`. En producción: `https://hospital-api-5jqk.onrender.com`.
 - Rutas: todas cuelgan de `/api/<recurso>`.
 
 Documentos relacionados: [README](../README.md), [arquitectura](arquitectura.md), [pruebas](pruebas.md).
@@ -577,6 +577,6 @@ Resumen del hospital (inicio) e historial clínico del paciente.
 
 ## Documentación interactiva (Swagger / OpenAPI)
 
-- **Swagger UI:** `http://localhost:8080/swagger-ui.html` en local o `[COMPLETAR: URL de la API]/swagger-ui.html` en producción. Pulsa **Authorize**, pega el token obtenido en `POST /api/auth/login` y podrás probar cualquier endpoint desde el navegador.
+- **Swagger UI:** `http://localhost:8080/swagger-ui.html` en local o `https://hospital-api-5jqk.onrender.com/swagger-ui.html` en producción. Pulsa **Authorize**, pega el token obtenido en `POST /api/auth/login` y podrás probar cualquier endpoint desde el navegador.
 - **Especificación OpenAPI 3 (JSON):** [`docs/openapi.json`](openapi.json), exportada desde `http://localhost:8080/v3/api-docs`. Sirve para importar la API en Postman, Insomnia o generadores de clientes.
 - Cada endpoint tiene `@Operation` con su resumen y descripción, e indica los roles permitidos; cada método declara sus respuestas (éxito, 400, 404, 409 y 422 según corresponda) con descripción concreta y el esquema de error `ErrorResponse` con ejemplos; 401 y 403 se declaran en todos los endpoints protegidos.
