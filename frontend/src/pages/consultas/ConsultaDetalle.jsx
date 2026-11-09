@@ -8,9 +8,11 @@ import {
   obtenerConsulta,
   quitarDiagnostico,
 } from '../../api/consultas.js'
+import { listarTiposDiagnostico } from '../../api/catalogos.js'
 import { listarDiagnosticos } from '../../api/diagnosticos.js'
+import { listarTratamientos } from '../../api/tratamientos.js'
 import { useAuth } from '../../auth/useAuth.js'
-import { BadgeActivo } from '../../components/Badge.jsx'
+import Badge, { BadgeActivo } from '../../components/Badge.jsx'
 import ConfirmDialog from '../../components/ConfirmDialog.jsx'
 import Dato from '../../components/Dato.jsx'
 import ErrorAlert from '../../components/ErrorAlert.jsx'
@@ -21,6 +23,9 @@ import { useDatosCita } from '../../hooks/useDatosCita.js'
 import { normalizarError } from '../../utils/errores.js'
 import { formatearFecha, formatearFechaHora, formatearHora } from '../../utils/formato.js'
 import { nombreMedico, nombrePaciente } from '../citas/utilsCita.js'
+import DiagnosticoNuevoConsulta from './DiagnosticoNuevoConsulta.jsx'
+import { consultaEditable, textoFinEdicion } from './utilsConsulta.js'
+import TratamientoNuevoConsulta from './TratamientoNuevoConsulta.jsx'
 
 export default function ConsultaDetalle() {
   const { id } = useParams()
@@ -30,9 +35,13 @@ export default function ConsultaDetalle() {
   const puedeEditar = puede(rol, 'consultas', 'editar')
   const puedeDesactivar = puede(rol, 'consultas', 'desactivar')
   const puedeAsociar = puede(rol, 'consultas', 'asociarDiagnostico')
+  const puedeRegistrarDiagnostico = puedeAsociar && puede(rol, 'diagnosticos', 'crear')
+  const puedeVerTratamientos = puede(rol, 'tratamientos', 'ver')
+  const puedeCrearTratamiento = puede(rol, 'tratamientos', 'crear')
 
   const [exito, setExito] = useState(location.state?.mensaje ?? '')
-  const [errorAccion, setErrorAccion] = useState('')
+  // Error de un paso posterior al registro (diagnóstico o tratamiento), enviado por el formulario
+  const [errorAccion, setErrorAccion] = useState(location.state?.error ?? '')
   const [nuevoDiagnostico, setNuevoDiagnostico] = useState('')
   const [asociando, setAsociando] = useState(false)
   const [aQuitar, setAQuitar] = useState(null)
@@ -41,16 +50,25 @@ export default function ConsultaDetalle() {
   const [confirmando, setConfirmando] = useState(false)
   const [desactivando, setDesactivando] = useState(false)
   const [errorDesactivar, setErrorDesactivar] = useState('')
+  const [tratamientoPara, setTratamientoPara] = useState(null)
 
   const datosCita = useDatosCita()
   const { datos, error, cargando, recargar } = useApi(`consulta|${id}`, async () => {
     const consulta = await obtenerConsulta(id)
-    const [cita, asociaciones, diagnosticos] = await Promise.all([
+    const [cita, asociaciones, diagnosticos, tipos] = await Promise.all([
       obtenerCita(consulta.idCita).catch(() => null),
       listarDiagnosticosDeConsulta(id),
       listarDiagnosticos().catch(() => []),
+      listarTiposDiagnostico().catch(() => []),
     ])
-    return { consulta, cita, asociaciones, diagnosticos }
+    // Tratamientos activos de cada diagnóstico de la consulta (un tratamiento pertenece a un solo diagnóstico).
+    const listas = puedeVerTratamientos
+      ? await Promise.all(
+          asociaciones.map((a) => listarTratamientos({ idDiagnostico: a.idDiagnostico, soloActivos: true }).catch(() => [])),
+        )
+      : []
+    const tratamientosPorDiagnostico = Object.fromEntries(asociaciones.map((a, i) => [a.idDiagnostico, listas[i] ?? []]))
+    return { consulta, cita, asociaciones, diagnosticos, tipos, tratamientosPorDiagnostico }
   })
 
   useEffect(() => {
@@ -70,8 +88,11 @@ export default function ConsultaDetalle() {
     )
   }
 
-  const { consulta, cita, asociaciones, diagnosticos } = datos
+  const { consulta, cita, asociaciones, diagnosticos, tipos, tratamientosPorDiagnostico } = datos
+  const tiposPorId = mapaPor(tipos, 'idTipoDiagnostico')
   const activa = consulta.activo !== false
+  // Pasadas 24 horas desde la atención la consulta queda en solo lectura (el backend también lo exige)
+  const editable = consultaEditable(consulta)
   const diagnosticosPorId = mapaPor(diagnosticos, 'idDiagnostico')
   const idsAsociados = new Set(asociaciones.map((a) => a.idDiagnostico))
   const disponibles = diagnosticos.filter((d) => d.activo !== false && !idsAsociados.has(d.idDiagnostico))
@@ -129,16 +150,24 @@ export default function ConsultaDetalle() {
       </Link>
 
       <ErrorAlert tipo="exito" mensaje={exito} onCerrar={() => setExito('')} />
+      {activa && !editable && (
+        <ErrorAlert
+          tipo="aviso"
+          mensaje={`Esta consulta solo se podía modificar hasta el ${textoFinEdicion(consulta)}.`}
+        />
+      )}
 
       <div className="card card-body d-flex flex-column flex-md-row align-items-md-center justify-content-md-between">
         <div>
           <h1 className="h3 mb-0">Consulta #{consulta.idConsulta}</h1>
           <p className="d-flex align-items-center acciones-grupo text-muted small mt-1">
-            {formatearFechaHora(consulta.fechaHora)} {!activa && <BadgeActivo activo={false} />}
+            <span>{formatearFechaHora(consulta.fechaHora)}</span>
+            {!activa && <BadgeActivo activo={false} />}
+            {activa && !editable && <Badge>Solo lectura</Badge>}
           </p>
         </div>
         <div className="acciones-grupo d-flex">
-          {activa && puedeEditar && (
+          {editable && puedeEditar && (
             <Link
               to={`/consultas/${consulta.idConsulta}/editar`}
               className="btn btn-secondary btn-round"
@@ -203,21 +232,78 @@ export default function ConsultaDetalle() {
             {asociaciones.map((a) => {
               const d = diagnosticosPorId[a.idDiagnostico]
               return (
-                <li key={a.idDiagnostico} className="d-flex align-items-center justify-content-between">
-                  <Link to={`/diagnosticos/${a.idDiagnostico}`} className="font-weight-bold">
-                    {d?.descripcion ?? `Diagnóstico #${a.idDiagnostico}`}
-                  </Link>
-                  {activa && puedeAsociar && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setErrorQuitar('')
-                        setAQuitar(a)
-                      }}
-                      className="btn btn-link text-danger p-0"
-                    >
-                      Quitar
-                    </button>
+                <li key={a.idDiagnostico}>
+                  <div className="d-flex align-items-center justify-content-between">
+                    <div>
+                      <Link to={`/diagnosticos/${a.idDiagnostico}`} className="font-weight-bold">
+                        {d?.descripcion ?? `Diagnóstico #${a.idDiagnostico}`}
+                      </Link>
+                      {d && (
+                        <div className="text-muted small">
+                          {[tiposPorId[d.idTipoDiagnostico]?.descripcion, d.fecha && formatearFecha(d.fecha)].filter(Boolean).join(' · ')}
+                        </div>
+                      )}
+                    </div>
+                    {editable && puedeAsociar && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setErrorQuitar('')
+                          setAQuitar(a)
+                        }}
+                        className="btn btn-link text-danger p-0"
+                      >
+                        Quitar
+                      </button>
+                    )}
+                  </div>
+
+                  {puedeVerTratamientos && (
+                    <div className="mt-1">
+                      {(tratamientosPorDiagnostico[a.idDiagnostico] ?? []).length === 0 ? (
+                        <p className="text-muted small mb-0">Sin tratamiento.</p>
+                      ) : (
+                        <ul className="list-unstyled mb-0">
+                          {tratamientosPorDiagnostico[a.idDiagnostico].map((t) => (
+                            <li key={t.idTratamiento} className="small">
+                              <span className="text-muted">Tratamiento: </span>
+                              <Link to={`/tratamientos/${t.idTratamiento}`}>{t.descripcion}</Link>
+                              {(t.duracionDias || t.fechaInicio) && (
+                                <span className="text-muted">
+                                  {' · '}
+                                  {[t.duracionDias && `${t.duracionDias} días`, t.fechaInicio && `desde ${formatearFecha(t.fechaInicio)}`]
+                                    .filter(Boolean)
+                                    .join(', ')}
+                                </span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+
+                      {editable && puedeCrearTratamiento && (
+                        tratamientoPara === a.idDiagnostico ? (
+                          <TratamientoNuevoConsulta
+                            idDiagnostico={a.idDiagnostico}
+                            onCancelar={() => setTratamientoPara(null)}
+                            onRegistrado={(mensaje) => {
+                              setTratamientoPara(null)
+                              setErrorAccion('')
+                              setExito(mensaje)
+                              recargar()
+                            }}
+                          />
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setTratamientoPara(a.idDiagnostico)}
+                            className="btn btn-link p-0 mt-1 small font-weight-bold"
+                          >
+                            + Agregar tratamiento
+                          </button>
+                        )
+                      )}
+                    </div>
                   )}
                 </li>
               )
@@ -225,11 +311,26 @@ export default function ConsultaDetalle() {
           </ul>
         )}
 
-        {activa && puedeAsociar && (
+        {editable && puedeRegistrarDiagnostico && (
+          <div className="border-top pt-3 mt-3">
+            <h3 className="h6 mb-3">Registrar diagnóstico</h3>
+            <DiagnosticoNuevoConsulta
+              idConsulta={consulta.idConsulta}
+              tipos={tipos}
+              onRegistrado={(mensaje) => {
+                setErrorAccion('')
+                setExito(mensaje)
+                recargar()
+              }}
+            />
+          </div>
+        )}
+
+        {editable && puedeAsociar && (
           <div className="d-flex flex-wrap align-items-end border-top pt-3 mt-3 acciones-grupo">
             <div className="flex-grow-1">
               <label htmlFor="nuevo-diagnostico" className="d-block font-weight-bold small mb-1">
-                Asociar un diagnóstico
+                O asociar un diagnóstico ya registrado
               </label>
               <select
                 id="nuevo-diagnostico"
@@ -249,13 +350,10 @@ export default function ConsultaDetalle() {
               type="button"
               onClick={asociar}
               disabled={!nuevoDiagnostico || asociando}
-              className="btn btn-primary btn-round"
+              className="btn btn-outline-secondary btn-round"
             >
               {asociando ? 'Asociando...' : 'Asociar'}
             </button>
-            <Link to="/diagnosticos/nuevo" className="font-weight-bold">
-              Crear diagnóstico
-            </Link>
           </div>
         )}
       </div>

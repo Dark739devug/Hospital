@@ -14,6 +14,7 @@ import { BadgeActivo } from '../../components/Badge.jsx'
 import ConfirmDialog from '../../components/ConfirmDialog.jsx'
 import Dato from '../../components/Dato.jsx'
 import ErrorAlert from '../../components/ErrorAlert.jsx'
+import CredencialesGeneradas from '../../components/CredencialesGeneradas.jsx'
 import Loading from '../../components/Loading.jsx'
 import { puede } from '../../config/menu.js'
 import { mapaPor, useApi } from '../../hooks/useApi.js'
@@ -29,6 +30,8 @@ export default function MedicoDetalle() {
   const puedeEstado = puede(rol, 'personal', 'desactivar')
 
   const [exito, setExito] = useState(location.state?.mensaje ?? '')
+  // Solo llegan justo después de registrar al médico; se guardan antes de limpiar location.state.
+  const [credenciales, setCredenciales] = useState(location.state?.credenciales ?? null)
   const [errorAccion, setErrorAccion] = useState('')
   const [nueva, setNueva] = useState('')
   const [asignando, setAsignando] = useState(false)
@@ -108,6 +111,7 @@ export default function MedicoDetalle() {
         &larr; Volver a personal
       </Link>
       <ErrorAlert tipo="exito" mensaje={exito} onCerrar={() => setExito('')} />
+      <CredencialesGeneradas credenciales={credenciales} onCerrar={() => setCredenciales(null)} />
 
       <div className="card card-body d-flex flex-column flex-md-row align-items-md-center justify-content-md-between">
         <div>

@@ -11,7 +11,7 @@ export const obtenerConsulta = (id) => client.get(`${RUTAS.consultas}/${id}`).th
 export const crearConsulta = (datos) => client.post(RUTAS.consultas, datos).then((r) => r.data)
 export const actualizarConsulta = (id, datos) =>
   client.put(`${RUTAS.consultas}/${id}`, datos).then((r) => r.data)
-/** 409 si tiene diagnósticos asociados. */
+/** 409 si tiene diagnósticos asociados. 422 al editar una consulta con más de 24 horas. */
 export const desactivarConsulta = (id) => client.delete(`${RUTAS.consultas}/${id}`)
 
 // Diagnósticos de una consulta (tabla de enlace)

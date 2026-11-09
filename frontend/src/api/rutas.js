@@ -5,6 +5,7 @@ export const RUTAS = {
   auth: {
     login: `${PREFIJO}/auth/login`,
     me: `${PREFIJO}/auth/me`,
+    cambiarPassword: `${PREFIJO}/auth/cambiar-password`,
     register: `${PREFIJO}/auth/register`,
   },
   pacientes: `${PREFIJO}/paciente`,

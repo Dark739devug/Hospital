@@ -1,4 +1,4 @@
-import { ayerISO } from '../../utils/formato.js'
+import { ayerISO, hoyISO } from '../../utils/formato.js'
 
 export const SEXOS = [
   { valor: 'M', etiqueta: 'Masculino' },
@@ -87,3 +87,6 @@ export function validarPaciente(f) {
   if (f.direccion.trim().length > 255) e.direccion = 'Máximo 255 caracteres'
   return e
 }
+
+/** Tratamiento vigente: activo y sin fecha de fin o con fin hoy o después. */
+export const tratamientoVigente = (t) => t.activo !== false && (!t.fechaFin || t.fechaFin >= hoyISO())

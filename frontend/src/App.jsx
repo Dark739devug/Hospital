@@ -8,6 +8,7 @@ import MainLayout from './layouts/MainLayout.jsx'
 import Loading from './components/Loading.jsx'
 const Inicio = lazy(() => import('./pages/Inicio.jsx'))
 const Login = lazy(() => import('./pages/Login.jsx'))
+const CambiarPassword = lazy(() => import('./pages/CambiarPassword.jsx'))
 const NoAutorizado = lazy(() => import('./pages/NoAutorizado.jsx'))
 const NoEncontrado = lazy(() => import('./pages/NoEncontrado.jsx'))
 const AgendaCitas = lazy(() => import('./pages/citas/AgendaCitas.jsx'))
@@ -85,6 +86,10 @@ export default function App() {
       </Route>
 
       <Route element={<ProtectedRoute />}>
+        <Route element={<AuthLayout />}>
+          <Route path="/cambiar-password" element={<CambiarPassword />} />
+        </Route>
+
         <Route element={<MainLayout />}>
           <Route index element={<Inicio />} />
 

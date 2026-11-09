@@ -69,3 +69,25 @@ export function validarConsulta(f) {
   if (f.presionArterial.trim().length > 10) e.presionArterial = 'Máximo 10 caracteres (ej. 120/80)'
   return e
 }
+
+/** Igual que el backend (VentanaEdicionConsulta): una consulta se edita solo durante las 24 horas siguientes a su atención. */
+export const HORAS_EDICION = 24
+
+/** Momento en que la consulta deja de ser editable (fechaHora es hora local del servidor, sin zona). */
+export function finEdicion(c) {
+  if (!c?.fechaHora) return null
+  return new Date(new Date(c.fechaHora).getTime() + HORAS_EDICION * 3600 * 1000)
+}
+
+export function consultaEditable(c, ahora = new Date()) {
+  const fin = finEdicion(c)
+  return c?.activo !== false && (!fin || ahora <= fin)
+}
+
+/** 'DD/MM/YYYY HH:mm' (hora local) del fin de la ventana de edición. */
+export function textoFinEdicion(c) {
+  const f = finEdicion(c)
+  if (!f) return ''
+  const d = (n) => String(n).padStart(2, '0')
+  return `${d(f.getDate())}/${d(f.getMonth() + 1)}/${f.getFullYear()} ${d(f.getHours())}:${d(f.getMinutes())}`
+}

@@ -78,7 +78,7 @@ export default function MedicoForm() {
         email: vacioANulo(form.email),
       }
       const guardado = esEdicion ? await actualizarMedico(id, { ...original, ...payload }) : await crearMedico(payload)
-      navigate(`/personal/medicos/${guardado.idMedico}`, { replace: true, state: { mensaje: esEdicion ? 'Médico actualizado.' : 'Médico registrado. Ahora puede asignarle especialidades.' } })
+      navigate(`/personal/medicos/${guardado.idMedico}`, { replace: true, state: { mensaje: esEdicion ? 'Médico actualizado.' : 'Médico registrado. Ahora puede asignarle especialidades.', credenciales: esEdicion ? null : guardado.credenciales } })
     } catch (err) {
       // 400: `detalles` por campo (noColegiado, nombre, apellidoPaterno, telefono, email); 409: colegiado o correo repetidos; 404: no existe
       const { message, detalles } = normalizarError(err)

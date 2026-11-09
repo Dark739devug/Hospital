@@ -12,7 +12,14 @@ const quitarPrefijo = (rol) => String(rol).replace(/^ROLE_/, '')
 
 function construirUsuario(datos) {
   const roles = (datos.roles ?? []).map(quitarPrefijo)
-  return { username: datos.username, roles, rol: roles[0] ?? null }
+  return {
+    username: datos.username,
+    roles,
+    rol: roles[0] ?? null,
+    // Contraseña temporal: ProtectedRoute obliga a cambiarla antes de usar el sistema.
+    debeCambiarPassword: Boolean(datos.debeCambiarPassword),
+    fechaExpiracionPassword: datos.fechaExpiracionPassword ?? null,
+  }
 }
 
 export function AuthProvider({ children }) {
@@ -76,6 +83,10 @@ export function AuthProvider({ children }) {
     setUsuario(null)
   }, [])
 
+  const passwordCambiada = useCallback(() => {
+    setUsuario((actual) => (actual ? { ...actual, debeCambiarPassword: false, fechaExpiracionPassword: null } : actual))
+  }, [])
+
   const tieneRol = useCallback((roles) => !!usuario && roles.includes(usuario.rol), [usuario])
 
   const valor = useMemo(
@@ -87,9 +98,10 @@ export function AuthProvider({ children }) {
       cerroSesion,
       login,
       logout,
+      passwordCambiada,
       tieneRol,
     }),
-    [usuario, cargando, sesionExpirada, cerroSesion, login, logout, tieneRol],
+    [usuario, cargando, sesionExpirada, cerroSesion, login, logout, passwordCambiada, tieneRol],
   )
 
   return <AuthContext.Provider value={valor}>{children}</AuthContext.Provider>

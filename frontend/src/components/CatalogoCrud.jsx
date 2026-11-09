@@ -5,6 +5,7 @@ import { crud } from '../api/administracion.js'
 import { useAuth } from '../auth/useAuth.js'
 import { BadgeActivo } from './Badge.jsx'
 import ConfirmDialog from './ConfirmDialog.jsx'
+import CredencialesGeneradas from './CredencialesGeneradas.jsx'
 import EmptyState from './EmptyState.jsx'
 import ErrorAlert from './ErrorAlert.jsx'
 import FormField from './FormField.jsx'
@@ -104,8 +105,9 @@ function DialogoCatalogo({ config, fila, opciones, protegida, onCerrar, onListo 
       const payload = aPayload(config.campos, form)
       if (esEdicion) await api.actualizar(fila[config.idCampo], { ...fila, ...payload, [config.activoCampo]: activo })
       // El backend crea el registro activo por defecto
-      else await api.crear(payload)
-      onListo(esEdicion ? 'Cambios guardados.' : `Se creó el registro de ${config.singular}.`)
+      const creado = esEdicion ? null : await api.crear(payload)
+      // Médicos y enfermeros: el alta devuelve las credenciales generadas (solo esta vez)
+      onListo(esEdicion ? 'Cambios guardados.' : `Se creó el registro de ${config.singular}.`, creado?.credenciales ?? null)
     } catch (e) {
       // 400: `detalles` por campo (mismos nombres que el DTO); 409: duplicado o conflicto; 422: reglas de negocio (estados base, formato)
       const { message, detalles } = normalizarError(e)
@@ -191,6 +193,7 @@ export default function CatalogoCrud({ config, extra }) {
   const [incluirInactivos, setIncluirInactivos] = useState(false)
   const [pagina, setPagina] = useState(1)
   const [exito, setExito] = useState('')
+  const [credenciales, setCredenciales] = useState(null)
   const [dialogo, setDialogo] = useState(null) // { fila }
   const [aDesactivar, setADesactivar] = useState(null)
   const [procesando, setProcesando] = useState(false)
@@ -294,6 +297,7 @@ export default function CatalogoCrud({ config, extra }) {
       </div>
 
       <ErrorAlert tipo="exito" mensaje={exito} onCerrar={() => setExito('')} />
+      <CredencialesGeneradas credenciales={credenciales} onCerrar={() => setCredenciales(null)} />
       <ErrorAlert mensaje={error?.message} />
 
       <Table
@@ -334,9 +338,10 @@ export default function CatalogoCrud({ config, extra }) {
           opciones={opciones}
           protegida={dialogo.fila ? esProtegida(dialogo.fila) : false}
           onCerrar={() => setDialogo(null)}
-          onListo={(mensaje) => {
+          onListo={(mensaje, nuevas) => {
             setDialogo(null)
             setExito(mensaje)
+            if (nuevas) setCredenciales(nuevas)
             recargar()
           }}
         />
