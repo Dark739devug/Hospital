@@ -186,7 +186,7 @@ Detalles de la implementación:
 
 ## 5. Modelo de seguridad
 
-La autorización se declara con `@PreAuthorize` en cada método de las controladoras (`@EnableMethodSecurity`). Solo las lecturas de catálogos (tipos, estados, departamentos, clínicas, especialidades, enfermeros) no tienen `@PreAuthorize` y las puede consultar cualquier usuario autenticado; los datos clínicos y de caja se leen solo con el rol correspondiente. Resumen por recurso, generado a partir de los 220 endpoints reales:
+La autorización se declara con `@PreAuthorize` en cada método de las controladoras (`@EnableMethodSecurity`). Solo las lecturas de catálogos (tipos, estados, departamentos, clínicas, especialidades, enfermeros) no tienen `@PreAuthorize` y las puede consultar cualquier usuario autenticado; los datos clínicos y de caja se leen solo con el rol correspondiente. Resumen por recurso, generado a partir de los 223 endpoints reales:
 
 - **E**: puede ejecutar todas las operaciones de escritura (POST, PUT, PATCH y DELETE) del recurso.
 - **E\***: puede ejecutar solo algunas operaciones de escritura (por ejemplo crear pero no desactivar).
@@ -551,7 +551,7 @@ La entrega 1 fue un diseño previo a la implementación. Estas son las diferenci
 | Horario del médico | Tabla `horarios_medico` y validación de la cita dentro del horario | No se implementó; solo se valida que el médico no tenga otra cita activa a la misma fecha y hora. |
 | Recetas | Tabla `recetas` y `POST /api/recetas/{id}/dispensar` (descuenta stock) | Medicamentos por tratamiento (`/api/tratamiento-medicamento`) y ajuste manual de stock; no hay dispensación automática. |
 | Emergencia y hospitalización | `hospitalizaciones.id_emergencia`; estados y destino de alta de emergencia en catálogos | No hay vínculo entre hospitalización y emergencia; la emergencia se cierra con `fecha_hora_alta`. |
-| Endpoints | 84 endpoints | 220 endpoints (CRUD completo de catálogos y filtros adicionales). |
+| Endpoints | 84 endpoints | 223 endpoints (CRUD completo de catálogos y filtros adicionales). |
 | Rutas | Prefijo `/api`; listas paginadas con `page` y `size` | Prefijo `/api` en todos los recursos; listados sin paginación. |
 | Duración del token | 2 horas (7200 s) | 1 hora (`JWT_EXPIRATION_MS`, 3600000). |
 | Respuesta de login | `{ token, tipo, expiraEn, rol }` | `{ token, type }`; el rol se consulta con `GET /api/auth/me`. |
