@@ -32,13 +32,19 @@ export default function PacienteForm() {
 
   useEffect(() => {
     let cancelado = false
-    setCargando(true)
-    setErrorCarga(null)
-    const catalogos = Promise.allSettled([listarAlergias(), listarTiposSangre()])
-    const paciente = esEdicion ? obtenerPaciente(id) : Promise.resolve(null)
-    Promise.all([paciente, catalogos])
-      .then(([p, [a, t]]) => {
-        if (cancelado) return
+    // El estado se reinicia dentro de la promesa y no de forma síncrona en el efecto (igual que useApi).
+    Promise.resolve()
+      .then(() => {
+        if (cancelado) return null
+        setCargando(true)
+        setErrorCarga(null)
+        const catalogos = Promise.allSettled([listarAlergias(), listarTiposSangre()])
+        const paciente = esEdicion ? obtenerPaciente(id) : Promise.resolve(null)
+        return Promise.all([paciente, catalogos])
+      })
+      .then((resultado) => {
+        if (cancelado || !resultado) return
+        const [p, [a, t]] = resultado
         if (p) setForm(pacienteAFormulario(p))
         if (a.status === 'fulfilled') setAlergias(a.value)
         if (t.status === 'fulfilled') setTiposSangre(t.value)

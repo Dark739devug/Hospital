@@ -1,4 +1,5 @@
 -- Esquema PostgreSQL: ejecutar conectado a la BD 'Hospital' (crearla antes, vacia).
+SET client_encoding = 'UTF8';
 
 -- =====================================================
 -- CATÁLOGOS (eliminan dependencias transitivas → 3FN)
@@ -474,3 +475,11 @@ INSERT INTO metodos_pago (descripcion) VALUES
 
 INSERT INTO estados_factura (descripcion) VALUES
 ('Pendiente'),('Pagada'),('Cancelada');
+
+
+INSERT INTO alergias (nombre, descripcion) VALUES
+('Penicilina','Alergia a la penicilina y otros betalactámicos'),
+('Ácido acetilsalicílico','Alergia a la aspirina y AINE relacionados'),
+('Látex','Alergia al látex de guantes y material médico'),
+('Mariscos','Alergia alimentaria a crustáceos y moluscos'),
+('Sulfonamidas','Alergia a antibióticos sulfa');

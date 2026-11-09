@@ -62,7 +62,7 @@ export default function FacturaDetalle() {
     return { factura, saldo, lineas, pagos }
   })
 
-  // Nombre del paciente con GET /api/v1/paciente/{id}/resumen (permitido también a CAJERO)
+  // Nombre del paciente con GET /api/paciente/{id}/resumen (permitido también a CAJERO)
   const datos = useDatosFacturacion(carga ? [carga.factura.idPaciente] : [])
 
   useEffect(() => {

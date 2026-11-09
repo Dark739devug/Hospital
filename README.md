@@ -29,6 +29,16 @@ Una API para gestionar un hospital privado en Guatemala. Atiende tres áreas asi
 
 Roles del sistema: `ADMIN`, `MEDICO`, `ENFERMERO`, `RECEPCIONISTA`, `FARMACEUTICO` y `CAJERO`. Son 219 endpoints REST, todos protegidos por token salvo el login.
 
+## Versión publicada
+
+| Parte | URL |
+|---|---|
+| Aplicación web (Vercel) | [COMPLETAR: URL del frontend] |
+| API (Render) | [COMPLETAR: URL de la API] |
+| Swagger UI | [COMPLETAR: URL de la API]/swagger-ui.html |
+
+Usuario de prueba: [COMPLETAR: usuario y contraseña de demostración, o "solicitarlo al equipo"]. El plan gratuito de Render duerme el servicio tras 15 minutos sin uso: la primera petición puede tardar alrededor de un minuto en responder.
+
 ## Tecnologías
 
 | Parte | Tecnología |
@@ -37,7 +47,7 @@ Roles del sistema: `ADMIN`, `MEDICO`, `ENFERMERO`, `RECEPCIONISTA`, `FARMACEUTIC
 | Autenticación | JWT con jjwt 0.12.6 (HS256) y contraseñas con BCrypt |
 | Documentación | springdoc-openapi 3.1.0 (Swagger UI) |
 | Base de datos | PostgreSQL (38 tablas) |
-| Pruebas | JUnit 5 y Mockito (390 pruebas, 389 unitarias y 1 de integración opcional) |
+| Pruebas | JUnit 5 y Mockito (391 pruebas, 390 unitarias y 1 de integración opcional) |
 | Frontend | Vite 8, React 19, React Router 7, axios, Bootstrap 4.6.2 y reactstrap 9.2.3 con el tema Now UI Dashboard |
 
 ## Estructura del repositorio
@@ -84,15 +94,18 @@ El backend lee su configuración de variables de entorno (`hospital/src/main/res
 
 | Variable | Descripción | Valor por defecto |
 |---|---|---|
-| `DB_URL` | URL JDBC de la base | `jdbc:postgresql://localhost:5432/Hospital` |
+| `DB_URL` | URL JDBC completa de la base (si se define, tiene prioridad sobre las tres siguientes) | `jdbc:postgresql://localhost:5432/Hospital` |
+| `DB_HOST`, `DB_PORT`, `DB_NAME` | La conexión por partes (así se configura en Render) | `localhost`, `5432`, `Hospital` |
+| `PORT` | Puerto HTTP de la API (lo asigna Render) | `8080` |
 | `DB_USER` | Usuario de PostgreSQL | `postgres` |
 | `DB_PASSWORD` | Contraseña de PostgreSQL | **Obligatoria, sin valor por defecto** |
-| `JWT_SECRET` | Secreto con que se firman los tokens | Valor solo de desarrollo; **definirlo en producción** |
+| `JWT_SECRET` | Secreto con que se firman los tokens (mínimo 32 caracteres) | **Obligatoria, sin valor por defecto** |
 | `JWT_EXPIRATION_MS` | Duración del token en milisegundos | `3600000` (1 hora) |
 | `CORS_ORIGINS` | Orígenes permitidos (separados por coma) | `http://localhost:5173` |
 | `ADMIN_USER` | Nombre del usuario administrador inicial | `admin` |
-| `ADMIN_PASSWORD` | Contraseña del administrador inicial | Valor solo de desarrollo; **definirla en producción** |
+| `ADMIN_PASSWORD` | Contraseña del administrador inicial (solo se usa al crearlo la primera vez) | **Obligatoria, sin valor por defecto** |
 | `FACTURACION_IVA` | Tasa de IVA de las facturas | `0.12` |
+| `PORT` | Puerto HTTP del backend (Render lo define solo) | `8080` |
 
 PowerShell (Windows), en la misma terminal donde arrancarás el backend:
 
@@ -130,7 +143,7 @@ cd hospital
 ./mvnw spring-boot:run
 ```
 
-La API queda en **http://localhost:8080**. Al arrancar por primera vez, `DataInitializer` crea los 6 roles y el **usuario administrador inicial**: el nombre es `ADMIN_USER` (`admin` por defecto) y la contraseña la defines con `ADMIN_PASSWORD`. Si no la defines se usa el valor de desarrollo que aparece en `application.properties` (`Admin123*`); es solo para pruebas locales y debe cambiarse en cualquier entorno publicado. Los demás usuarios los crea el ADMIN (`POST /api/auth/register`, o desde la pantalla de usuarios del frontend).
+La API queda en **http://localhost:8080**. Al arrancar por primera vez, `DataInitializer` crea los 6 roles y el **usuario administrador inicial**: el nombre es `ADMIN_USER` (`admin` por defecto) y la contraseña la defines con `ADMIN_PASSWORD`. Sin `DB_PASSWORD`, `JWT_SECRET` y `ADMIN_PASSWORD` la aplicación no arranca. Si el administrador ya existe, `DataInitializer` no cambia su contraseña: se cambia desde la pantalla de usuarios. Los demás usuarios los crea el ADMIN (`POST /api/auth/register`, o desde la pantalla de usuarios del frontend).
 
 ### 4. Levantar el frontend
 
@@ -152,7 +165,11 @@ Con el backend en marcha abre **http://localhost:8080/swagger-ui.html**. Para pr
 3. Pulsa el botón **Authorize** (candado), pega el token y confirma.
 4. Ya puedes ejecutar cualquier endpoint con **Try it out**.
 
-Cada endpoint indica en su descripción qué roles pueden usarlo. La especificación completa está en [docs/openapi.json](docs/openapi.json) (también en `http://localhost:8080/v3/api-docs`).
+Cada endpoint indica en su descripción qué roles pueden usarlo. La especificación completa está en [docs/openapi.json](docs/openapi.json) (también en `http://localhost:8080/v3/api-docs`). Para actualizar el archivo con el backend en marcha (en PowerShell escribir `curl.exe`):
+
+```bash
+curl -s http://localhost:8080/v3/api-docs -o docs/openapi.json
+```
 
 ## Probar los endpoints con curl
 
@@ -208,6 +225,7 @@ Son pruebas unitarias con Mockito sobre la capa de servicios: no necesitan base 
 | [docs/api.md](docs/api.md) | Guía para terceros y tabla de endpoints por módulo (método, ruta, roles, respuestas). |
 | [docs/pruebas.md](docs/pruebas.md) | Estrategia de pruebas y resultados. |
 | [docs/openapi.json](docs/openapi.json) | Especificación OpenAPI 3 de la API. |
+| [docs/despliegue-render.md](docs/despliegue-render.md) | Cómo publicar la base, la API y el frontend en Render. |
 | [frontend/README.md](frontend/README.md) | Interfaz web: estructura, módulos por rol y decisiones. |
 
 ## Equipo

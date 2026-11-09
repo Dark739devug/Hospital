@@ -110,8 +110,11 @@ export default function CitaDetalle() {
 
   const datosCita = useDatosCita()
   const { datos: cita, error, cargando, recargar } = useApi(`cita|${id}`, () => obtenerCita(id))
-  // Consulta registrada para la cita (null = todavía no tiene).
-  const { datos: consulta, recargar: recargarConsulta } = useApi(`cita-consulta|${id}`, () => obtenerConsultaDeCita(id))
+  // Consulta registrada para la cita (null = todavía no tiene). Recepción no puede leer consultas (403): no se pide.
+  const puedeVerConsulta = puede(rol, 'consultas', 'ver')
+  const { datos: consulta, recargar: recargarConsulta } = useApi(`cita-consulta|${id}|${puedeVerConsulta}`, () =>
+    puedeVerConsulta ? obtenerConsultaDeCita(id) : Promise.resolve(null),
+  )
 
   useEffect(() => {
     if (location.state?.mensaje) navigate(location.pathname, { replace: true, state: null })

@@ -1,6 +1,9 @@
 package com.example.hospital.shared.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -23,6 +26,8 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(RecursoNoEncontradoException.class)
     public ResponseEntity<ErrorResponse> manejarRecursoNoEncontrado(
@@ -186,16 +191,21 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, status);
     }
 
+    // Restricción de la base de datos (UNIQUE, llave foránea, CHECK) que no detectó el service,
+    // por ejemplo dos peticiones simultáneas con el mismo dato. No se expone el detalle SQL.
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> manejarIntegridadDatos(
+            DataIntegrityViolationException ex, HttpServletRequest request) {
+        log.warn("Violación de integridad en {}: {}", request.getRequestURI(), ex.getMostSpecificCause().getMessage());
+        return construir(HttpStatus.CONFLICT,
+                "La operación entra en conflicto con datos existentes (registro duplicado o en uso)", request, null);
+    }
+
+    // Error no previsto: el detalle queda en el log del servidor y al cliente solo se le da un mensaje genérico.
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> manejarExcepcionGeneral(
             Exception ex, HttpServletRequest request) {
-        ErrorResponse error = ErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
-                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                .error(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase())
-                .message(ex.getMessage() != null ? ex.getMessage() : "Error interno del servidor")
-                .path(request.getRequestURI())
-                .build();
-        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+        log.error("Error no controlado en {}", request.getRequestURI(), ex);
+        return construir(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno del servidor", request, null);
     }
 }

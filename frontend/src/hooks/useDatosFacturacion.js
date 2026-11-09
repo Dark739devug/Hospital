@@ -6,7 +6,7 @@ const tolerante = (promesa) => promesa.catch(() => [])
 
 /**
  * Métodos de pago y estados de factura (para selects y etiquetas) y los nombres de los pacientes cuyos ids se pasan.
- * Los nombres se resuelven con GET /api/v1/paciente/{id}/resumen (permitido a ADMIN, CAJERO y RECEPCIONISTA) y no con
+ * Los nombres se resuelven con GET /api/paciente/{id}/resumen (permitido a ADMIN, CAJERO y RECEPCIONISTA) y no con
  * el listado completo de pacientes, que el rol CAJERO no puede leer. Si un resumen falla (403/404) ese paciente queda
  * sin nombre y las pantallas muestran "Paciente #id".
  * `pacientesPorId[id]` tiene la forma { idPaciente, nombre, dpiPaciente } compatible con `nombrePaciente`.

@@ -52,11 +52,16 @@ export default function PacientesLista() {
 
   useEffect(() => {
     let cancelado = false
-    setCargando(true)
-    setError('')
-    listarPacientes({ q: busqueda, todos: incluirInactivos })
+    // El estado se reinicia dentro de la promesa y no de forma síncrona en el efecto (igual que useApi).
+    Promise.resolve()
+      .then(() => {
+        if (cancelado) return null
+        setCargando(true)
+        setError('')
+        return listarPacientes({ q: busqueda, todos: incluirInactivos })
+      })
       .then((datos) => {
-        if (!cancelado) setPacientes(datos)
+        if (!cancelado && datos) setPacientes(datos)
       })
       .catch((e) => {
         if (!cancelado) {

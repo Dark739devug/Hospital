@@ -118,7 +118,7 @@ export default function CuentaDetalle() {
     return { cuenta, pagos }
   })
 
-  // Nombre del paciente con GET /api/v1/paciente/{id}/resumen (permitido también a CAJERO)
+  // Nombre del paciente con GET /api/paciente/{id}/resumen (permitido también a CAJERO)
   const datos = useDatosFacturacion(carga ? [carga.cuenta.idPaciente] : [])
 
   useEffect(() => {

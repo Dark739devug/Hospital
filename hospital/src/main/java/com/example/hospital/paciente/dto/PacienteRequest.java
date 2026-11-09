@@ -15,14 +15,17 @@ public record PacienteRequest(
         @Size(max = 100)
         String nombre,
 
+        @Schema(description = "Apellido paterno.", example = "García")
         @NotBlank(message = "El apellido paterno es obligatorio")
         @Size(max = 100)
         String apellidoPaterno,
 
+        @Schema(description = "Apellido materno.", example = "Hernández")
         @NotBlank(message = "El apellido materno es obligatorio")
         @Size(max = 100)
         String apellidoMaterno,
 
+        @Schema(description = "Fecha de nacimiento yyyy-MM-dd (no futura).", example = "1990-05-20")
         @Past(message = "La fecha de nacimiento debe ser pasada")
         LocalDate fechaNacimiento,
 
@@ -31,17 +34,22 @@ public record PacienteRequest(
         @Pattern(regexp = "[MF]", message = "El sexo debe ser M o F")
         String sexo,
 
+        @Schema(description = "Teléfono de 8 dígitos.", example = "55123456")
         @NotBlank(message = "El teléfono es obligatorio")
         @Size(max = 20)
         String telefono,
 
+        @Schema(description = "Correo electrónico.", example = "ana.garcia@example.com")
         @Email(message = "Correo electrónico inválido")
         @Size(max = 150)
         String correoElectronico,
 
+        @Schema(description = "Dirección de residencia.", example = "6a avenida 5-20 zona 1, Guatemala")
         @Size(max = 255)
         String direccion,
 
+        @Schema(description = "Id de la alergia (catálogo /api/alergias). Opcional.", example = "1")
         Long idAlergias,
+        @Schema(description = "Id del tipo de sangre (catálogo /api/tipo-sangre; 1 = A+, 7 = O+). Opcional.", example = "7")
         Long idTipoDeSangre
 ) {}

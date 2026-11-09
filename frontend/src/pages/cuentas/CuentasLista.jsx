@@ -39,7 +39,7 @@ export default function CuentasLista() {
     listarCuentas({ idPaciente: idPacienteNum, idHospitalizacion, estado, soloActivas: !incluirInactivas }),
   )
 
-  // Nombres de los pacientes de las cuentas listadas (GET /api/v1/paciente/{id}/resumen, también permitido a CAJERO)
+  // Nombres de los pacientes de las cuentas listadas (GET /api/paciente/{id}/resumen, también permitido a CAJERO)
   const datos = useDatosFacturacion((cuentas ?? []).map((c) => c.idPaciente))
 
   useEffect(() => {

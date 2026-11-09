@@ -1,8 +1,8 @@
 // Permisos y menú por rol, derivados de los @PreAuthorize de cada controller del backend
 // (hospital/src/main/java/com/example/hospital/<paquete>/*Controller.java).
 //
-// IMPORTANTE: muchos endpoints GET no tienen @PreAuthorize, así que los puede consultar
-// cualquier usuario autenticado (constante TODOS). La escritura suele ser más restrictiva.
+// Las lecturas de datos clínicos y de caja tienen @PreAuthorize por rol; solo los catálogos
+// (tipos, estados, departamentos, clínicas...) los puede leer cualquier usuario autenticado.
 // Cada módulo declara por operación: ver (listar/consultar), crear, editar, desactivar.
 //
 // `implementado: false` => el módulo existe en el backend pero su pantalla llega en una
@@ -44,7 +44,7 @@ export const MODULOS = [
     grupo: 'Atención',
     implementado: true,
     permisos: {
-      ver: TODOS,
+      ver: CLINICOS,
       crear: [ADMIN, RECEPCIONISTA],
       editar: [ADMIN, RECEPCIONISTA],
       desactivar: SOLO_ADMIN,
@@ -59,7 +59,7 @@ export const MODULOS = [
     grupo: 'Atención',
     implementado: true,
     permisos: {
-      ver: TODOS,
+      ver: [ADMIN, MEDICO, ENFERMERO],
       crear: [ADMIN, MEDICO],
       editar: [ADMIN, MEDICO],
       desactivar: SOLO_ADMIN,
@@ -74,7 +74,7 @@ export const MODULOS = [
     ruta: '/diagnosticos',
     grupo: 'Atención',
     implementado: true,
-    permisos: { ver: TODOS, crear: [ADMIN, MEDICO], editar: [ADMIN, MEDICO], desactivar: SOLO_ADMIN },
+    permisos: { ver: [ADMIN, MEDICO, ENFERMERO], crear: [ADMIN, MEDICO], editar: [ADMIN, MEDICO], desactivar: SOLO_ADMIN },
   },
   {
     clave: 'tratamientos',
@@ -83,7 +83,7 @@ export const MODULOS = [
     ruta: '/tratamientos',
     grupo: 'Atención',
     implementado: true,
-    permisos: { ver: TODOS, crear: [ADMIN, MEDICO], editar: [ADMIN, MEDICO], desactivar: SOLO_ADMIN },
+    permisos: { ver: [ADMIN, MEDICO, ENFERMERO], crear: [ADMIN, MEDICO], editar: [ADMIN, MEDICO], desactivar: SOLO_ADMIN },
   },
   {
     clave: 'emergencia',
@@ -93,7 +93,7 @@ export const MODULOS = [
     grupo: 'Atención',
     implementado: true,
     permisos: {
-      ver: TODOS,
+      ver: CLINICOS,
       crear: [ADMIN, MEDICO, ENFERMERO],
       editar: [ADMIN, MEDICO, ENFERMERO],
       desactivar: SOLO_ADMIN,
@@ -142,7 +142,7 @@ export const MODULOS = [
       desactivar: SOLO_ADMIN,
       // POST /api/hospitalizaciones/{id}/alta
       darAlta: [ADMIN, MEDICO],
-      // /api/asignacion-enfermeros: lectura abierta, escritura solo ADMIN
+      // /api/asignacion-enfermeros: lectura ADMIN/MEDICO/ENFERMERO/RECEPCIONISTA, escritura solo ADMIN
       asignarEnfermeros: SOLO_ADMIN,
     },
   },
@@ -163,8 +163,10 @@ export const MODULOS = [
     ruta: '/medicamentos',
     grupo: 'Farmacia',
     implementado: true,
+    // GET /api/medicamentos: ADMIN/MEDICO/ENFERMERO/FARMACEUTICO. ENFERMERO lo lee solo para mostrar nombres
+    // en el historial del paciente; el módulo de farmacia no aparece en su menú.
     permisos: {
-      ver: TODOS,
+      ver: [ADMIN, MEDICO, FARMACEUTICO],
       crear: [ADMIN, FARMACEUTICO, MEDICO],
       editar: [ADMIN, FARMACEUTICO],
       desactivar: SOLO_ADMIN,
@@ -194,8 +196,7 @@ export const MODULOS = [
     ruta: '/facturas',
     grupo: 'Facturación',
     implementado: true,
-    // /api/facturas: GET abierto a cualquier usuario autenticado, pero el saldo (GET /{id}/saldo) y los pagos solo los leen
-    // ADMIN/CAJERO(/RECEPCIONISTA); por eso la pantalla se limita a los roles de caja y recepción.
+    // /api/facturas y /api/detalle-factura: GET (incluido el saldo) ADMIN/CAJERO/RECEPCIONISTA; los pagos solo ADMIN/CAJERO.
     // POST: ADMIN/CAJERO/RECEPCIONISTA; PUT y PATCH estado: ADMIN/CAJERO; DELETE: ADMIN.
     // /api/detalle-factura: POST ADMIN/CAJERO/RECEPCIONISTA; PUT ADMIN/CAJERO; DELETE ADMIN.
     permisos: {
@@ -216,7 +217,7 @@ export const MODULOS = [
     ruta: '/cuentas',
     grupo: 'Facturación',
     implementado: true,
-    // /api/cuentas: GET abierto; POST, PUT y PATCH ajustar-saldo: ADMIN/CAJERO; DELETE: ADMIN
+    // /api/cuentas: GET ADMIN/CAJERO/RECEPCIONISTA; POST, PUT y PATCH ajustar-saldo: ADMIN/CAJERO; DELETE: ADMIN
     permisos: {
       ver: [ADMIN, CAJERO, RECEPCIONISTA],
       crear: [ADMIN, CAJERO],

@@ -38,7 +38,7 @@ cd hospital
 Resultado esperado de la última ejecución completa (`clean test`):
 
 ```
-Tests run: 390, Failures: 0, Errors: 0, Skipped: 1
+Tests run: 391, Failures: 0, Errors: 0, Skipped: 1
 BUILD SUCCESS
 ```
 
@@ -58,19 +58,19 @@ La rúbrica define 8 módulos. La tabla agrupa las clases de prueba por módulo;
 | Módulo | Pruebas | Clases de prueba que lo cubren |
 |---|---:|---|
 | Autenticación | 44 | `AuthServiceImplTest` (9), `UsuariosServiceImplTest` (18), `RolServiceImplTest` (5), `UsuarioDetailsServiceTest` (4), `RegisterRequestTest` (4), `JwtAuthenticationFilterTest` (3), validación del DTO de rol (1) |
-| Administración | 31 | `MedicoServiceImplTest` (11), `MedicoEspecialidadesServiceImplTest` (5), `DependenciasYDefectosAdministracionTest` (9: departamentos, enfermeros, clínicas y especialidades de clínica), `OtrosCatalogosAdministracionTest` (2: especialidades médicas y turnos), validación de DTO de personal y catálogos (4) |
+| Administración | 32 | `MedicoServiceImplTest` (12), `MedicoEspecialidadesServiceImplTest` (5), `DependenciasYDefectosAdministracionTest` (9: departamentos, enfermeros, clínicas y especialidades de clínica), `OtrosCatalogosAdministracionTest` (2: especialidades médicas y turnos), validación de DTO de personal y catálogos (4) |
 | Pacientes | 29 | `PacienteServiceImplTest` (15), `TipoSangreServiceImplTest` (7), `AlergiasServiceImplTest` (6), validación de DTO (1) |
 | Clínica | 68 | `CitasServiceImplTest` (16), `DiagnosticosServiceImplTest` (10), `TratamientoServiceImplTest` (10), `DiagnosticoConsultaServiceImplTest` (9), `ConsultasServiceImplTest` (8), `TiposDiagnosticoServiceImplTest` (7), estados de cita en `OtrosCatalogosAdministracionTest` (3), validación de DTO clínicos (5) |
 | Emergencias | 41 | `EmergenciaServiceImplTest` (18), `TriajeServiceImplTest` (9), `NivelesUrgenciaServiceImplTest` (6), `ProcedimientosEmergenciaServiceImplTest` (5), validación de DTO (3) |
 | Hospitalización | 59 | `HospitalizacionesServiceImplTest` (21), `HabitacionServiceImplTest` (12), `TiposHabitacionServiceImplTest` (8), `AsignacionEnfermerosServiceImplTest` (7), `EstadosHospitalizacionServiceImplTest` (7), estado de habitación en `OtrosCatalogosAdministracionTest` (1), validación de DTO (3) |
 | Farmacia | 25 | `MedicamentosServiceImplTest` (17), `TratamientoMedicamentoServiceImplTest` (6), validación de DTO (2) |
 | Facturación | 81 | `FacturasServiceImplTest` (22), `CuentasServiceImplTest` (19), `PagosServiceImplTest` (17), `DetalleFacturaServiceImplTest` (10), `EstadosFacturaServiceImplTest` (8), método de pago en `DependenciasYDefectosAdministracionTest` (1), validación de DTO (4) |
-| **Subtotal de los 8 módulos** | **378** | |
+| **Subtotal de los 8 módulos** | **379** | |
 | Reportes (módulo transversal) | 7 | `ReportesServiceImplTest` (7) |
 | Catálogo de estados (transversal) | 4 | `EstadosCatalogoTest` (4) |
-| **Total de pruebas unitarias** | **389** | |
+| **Total de pruebas unitarias** | **390** | |
 | Integración (omitida sin base de datos) | 1 | `HospitalApplicationTests` |
-| **Total reportado por Maven** | **390** | 389 ejecutadas + 1 omitida |
+| **Total reportado por Maven** | **391** | 390 ejecutadas + 1 omitida |
 
 Todos los módulos superan con holgura el mínimo de 5 pruebas con sentido que pide la rúbrica.
 
@@ -112,4 +112,4 @@ export DB_PASSWORD='<contraseña de PostgreSQL>'
 cd hospital && ./mvnw test -Dtest=HospitalApplicationTests
 ```
 
-La prueba verifica que el contexto arranca: conexión a la base, entidades JPA, configuración de seguridad y `DataInitializer`.
+La prueba verifica que el contexto arranca: conexión a la base, entidades JPA, configuración de seguridad y `DataInitializer`. `JWT_SECRET` y `ADMIN_PASSWORD` no hacen falta para esta prueba: la clase fija valores propios solo de prueba.

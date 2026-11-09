@@ -8,6 +8,7 @@ import com.example.hospital.auth.dto.LoginRequest;
 import com.example.hospital.auth.dto.LoginResponse;
 import com.example.hospital.auth.dto.RegisterRequest;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -43,7 +44,7 @@ public class AuthController {
     @PostMapping("/register")
     @Operation(summary = "Registrar usuario", description = "Crea un nuevo usuario de acceso al sistema con contraseña cifrada. El campo `rol` (nombre del rol) es obligatorio. Política de contraseña: mínimo 8 caracteres. Devuelve `message` e `idUsuario`. Responde 400 si faltan datos o la contraseña es corta (con `detalles`), 409 si el usuario ya existe y 422 si el rol no existe o está inactivo.\n\nRoles permitidos: ADMIN.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Usuario creado"),
+            @ApiResponse(responseCode = "201", description = "Usuario creado"),
             @ApiResponse(responseCode = "400", description = "Datos inválidos o rol ausente"),
             @ApiResponse(responseCode = "409", description = "El usuario ya existe"),
             @ApiResponse(responseCode = "422", description = "Rol inexistente o inactivo")
@@ -53,11 +54,15 @@ public class AuthController {
         Map<String, Object> cuerpo = new java.util.LinkedHashMap<>();
         cuerpo.put("message", "Usuario '" + request.username() + "' creado exitosamente.");
         cuerpo.put("idUsuario", idUsuario);
-        return ResponseEntity.ok(cuerpo);
+        return ResponseEntity.status(HttpStatus.CREATED).body(cuerpo);
     }
 
     @GetMapping("/me")
-    @Operation(summary = "Usuario actual", description = "**Nuevo.** Devuelve el nombre de usuario y los roles del token con el que se hace la petición. Útil para que el frontend sepa quién inició sesión y qué menús mostrar.\n\nAcceso: cualquier usuario autenticado.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Nombre de usuario y roles del token"),
+            @ApiResponse(responseCode = "401", description = "Token ausente, inválido o expirado")
+    })
+    @Operation(summary = "Usuario actual", description = "Devuelve el nombre de usuario y los roles del token con el que se hace la petición. Útil para que el frontend sepa quién inició sesión y qué menús mostrar.\n\nAcceso: cualquier usuario autenticado.")
     public ResponseEntity<Map<String, Object>> me(Authentication authentication) {
         List<String> roles = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)

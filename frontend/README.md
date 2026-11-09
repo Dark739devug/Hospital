@@ -29,6 +29,12 @@ Para entrar se necesita un usuario del backend (el administrador inicial lo crea
 | -------------- | ------------------------------- | ----------------------- |
 | `VITE_API_URL` | URL base del backend            | `http://localhost:8080` |
 
+Vite fija `VITE_API_URL` en el momento del `npm run build`: en Vercel se define en las variables de entorno del proyecto (Production) antes de desplegar, y si cambia hay que volver a desplegar. Sin ella, la compilación apunta a `http://localhost:8080`.
+
+## Publicación (Vercel)
+
+El proyecto de Vercel usa `frontend/` como carpeta raíz (preset Vite). `vercel.json` redirige todas las rutas a `index.html` para que React Router resuelva las URL al recargar la página (por ejemplo `/pacientes/5`). El dominio de Vercel debe estar en `CORS_ORIGINS` del backend.
+
 ## Scripts
 
 - `npm run dev`: servidor de desarrollo.
@@ -43,8 +49,8 @@ Los permisos de la interfaz salen de los `@PreAuthorize` del backend y viven en 
 | ------------------------------------------------ | ----------------------------------------------------------------------------- |
 | Inicio: indicadores del día y accesos            | Todos (los indicadores según rol; FARMACEUTICO solo ve el stock bajo)         |
 | Pacientes (+ historial clínico en el detalle)    | ADMIN, MEDICO, ENFERMERO, RECEPCIONISTA (historial clínico: ADMIN, MEDICO, ENFERMERO; cuentas y facturas dentro del historial solo ADMIN) |
-| Citas, consultas, diagnósticos, tratamientos     | Lectura para todos; escritura según el rol clínico                            |
-| Emergencia, triaje, procedimientos               | Personal clínico                                                              |
+| Citas, consultas, diagnósticos, tratamientos     | Citas: personal clínico y recepción; consultas, diagnósticos y tratamientos: ADMIN, MEDICO, ENFERMERO; escritura según el rol clínico |
+| Emergencia, triaje, procedimientos               | Personal clínico y recepción (procedimientos: ADMIN, MEDICO, ENFERMERO)       |
 | Hospitalizaciones, habitaciones, enfermeros asignados | Personal clínico y recepción; la administración de habitaciones es de ADMIN |
 | Farmacia: medicamentos y medicamentos recetados  | ADMIN, FARMACEUTICO, MEDICO (según operación)                                 |
 | Facturación: facturas, cuentas, pagos            | ADMIN, CAJERO y RECEPCIONISTA (los pagos solo ADMIN y CAJERO)                 |
@@ -84,12 +90,11 @@ Decisiones:
 - La interfaz se adelanta con validaciones en cliente (campos obligatorios, tamaños, montos) pero el backend es la fuente de verdad: siempre se muestra su `message` o sus `detalles`.
 - Filtros: se envían al servidor siempre que el backend los combina; la búsqueda por texto se resuelve en el cliente cuando el backend no la ofrece.
 - Los roles son fijos del sistema y se muestran en solo lectura; los catálogos protegen los valores base (estados de cita, factura, habitación, hospitalización, tipos base).
-- Caja (CAJERO) no puede leer pacientes: usa `PacienteSelector` con los endpoints mínimos `/api/v1/paciente/busqueda` y `/{id}/resumen`.
+- Caja (CAJERO) no puede leer pacientes: usa `PacienteSelector` con los endpoints mínimos `/api/paciente/busqueda` y `/{id}/resumen`.
 - Tipografía: Montserrat se carga desde Google Fonts (sin conexión se usa la fuente del sistema).
 
 Pendientes:
 
-- Lectura abierta de datos financieros: `GET` de facturas, líneas y cuentas sigue abierto a cualquier usuario autenticado (política de lectura por definir). El historial del paciente ya omite cuentas y facturas para MEDICO y ENFERMERO.
 - No hay renovación del token: un token vigente de un usuario desactivado deja de funcionar (401), pero al expirar hay que volver a entrar.
 - Alojar localmente los archivos woff2 de Montserrat (hoy se cargan desde Google Fonts).
 - Faltan pruebas automáticas de interfaz (solo se probó a mano y con las pruebas unitarias del backend).

@@ -1,7 +1,7 @@
 import client from './client.js'
 import { RUTAS } from './rutas.js'
 
-/** GET /api/v1/paciente?q=&todos= (sin paginación en el backend) */
+/** GET /api/paciente?q=&todos= (sin paginación en el backend) */
 export const listarPacientes = ({ q, todos } = {}) => {
   const params = {}
   if (q && q.trim()) params.q = q.trim()
@@ -27,14 +27,14 @@ const cacheResumenes = new Map()
 
 export const guardarResumenPaciente = (r) => cacheResumenes.set(Number(r.idPaciente), r)
 
-/** GET /api/v1/paciente/busqueda?q= (pacientes activos; con menos de 2 caracteres devuelve []; máximo 20). */
+/** GET /api/paciente/busqueda?q= (pacientes activos; con menos de 2 caracteres devuelve []; máximo 20). */
 export const buscarPacientesResumen = (q) =>
   client.get(`${RUTAS.pacientes}/busqueda`, { params: { q } }).then((r) => {
     r.data.forEach(guardarResumenPaciente)
     return r.data
   })
 
-/** GET /api/v1/paciente/{id}/resumen (activo o inactivo; 404 si no existe). */
+/** GET /api/paciente/{id}/resumen (activo o inactivo; 404 si no existe). */
 export const obtenerPacienteResumen = (id) => client.get(`${RUTAS.pacientes}/${id}/resumen`).then((r) => r.data)
 
 /** Resumen con caché; devuelve null si no se puede leer (403/404/red) para que las pantallas muestren "Paciente #id". */

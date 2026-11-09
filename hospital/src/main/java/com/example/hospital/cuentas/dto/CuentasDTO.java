@@ -7,9 +7,12 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.PositiveOrZero;
 
 public record CuentasDTO(
+    @Schema(description = "Identificador del registro. Lo genera el servidor: no se envía al crear (se ignora).", example = "1")
     Long idCuenta,
+    @Schema(description = "Id del paciente (debe existir y estar activo).", example = "1")
     @NotNull(message = "El paciente es obligatorio")
     Long idPaciente,
+    @Schema(description = "Id de la hospitalización.", example = "1")
     Long idHospitalizacion,
     @Schema(description = "Solo lectura: la asigna el servidor al abrir la cuenta.", accessMode = Schema.AccessMode.READ_ONLY)
     java.time.LocalDateTime fechaApertura,

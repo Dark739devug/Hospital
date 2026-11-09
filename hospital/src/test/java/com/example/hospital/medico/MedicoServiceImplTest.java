@@ -15,6 +15,7 @@ import com.example.hospital.emergencia.EmergenciaRepository;
 import com.example.hospital.hospitalizaciones.HospitalizacionesRepository;
 import com.example.hospital.medico.dto.MedicoDTO;
 import com.example.hospital.medico.impl.MedicoServiceImpl;
+import com.example.hospital.shared.exception.RecursoNoEncontradoException;
 import com.example.hospital.shared.exception.ReglaNegocioException;
 import java.util.List;
 import java.util.Optional;
@@ -134,6 +135,15 @@ class MedicoServiceImplTest {
         assertThat(m.getEstado()).isFalse();
         verify(medicoRepository).save(m);
         verify(medicoRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void cambiarEstado_lanzaRecursoNoEncontrado_siElMedicoNoExiste_yNoGuarda() {
+        when(medicoRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(RecursoNoEncontradoException.class, () -> service.cambiarEstado(99L, false));
+
+        verify(medicoRepository, never()).save(any());
     }
 
     @Test

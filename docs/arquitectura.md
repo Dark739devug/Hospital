@@ -51,7 +51,6 @@ hospital/src/main/java/com/example/hospital/
     security/    JwtService, JwtAuthenticationFilter, UsuarioDetailsService, RestSecurityErrorHandler
     exception/   GlobalExceptionHandler, ErrorResponse y excepciones de negocio
     catalogos/   EstadosCatalogo (resuelve estados por nombre)
-    constants/   ApiConstants
 ```
 
 ### 2.1 Diagrama de capas
@@ -130,7 +129,17 @@ flowchart LR
 | Backend | Spring Boot 4.1.1, Java 21, Spring Security, Spring Data JPA, springdoc-openapi 3.1.0, jjwt 0.12.6 | 8080 |
 | Base de datos | PostgreSQL, esquema `hospital/Hosp_postgres.sql` (38 tablas) | 5432 |
 
-En desarrollo cada pieza corre en su puerto y el backend permite el origen del frontend por CORS (`CORS_ORIGINS`). Para publicarlo en la web: [COMPLETAR: URL de la API y del frontend, y si se despliega con HTTPS].
+En desarrollo cada pieza corre en su puerto y el backend permite el origen del frontend por CORS (`CORS_ORIGINS`).
+
+En producción, todo con HTTPS:
+
+| Componente | Servicio | URL |
+|---|---|---|
+| Backend | Render, Web Service con Docker (`hospital/Dockerfile`); el puerto lo asigna Render en `PORT` | [COMPLETAR: URL de la API] |
+| Base de datos | Render Postgres; el esquema se carga con `psql` y `Hosp_postgres.sql` | (privada) |
+| Frontend | Vercel, carpeta `frontend/` (`vercel.json` redirige todas las rutas a `index.html`) | [COMPLETAR: URL del frontend] |
+
+Detrás del proxy HTTPS de Render, `server.forward-headers-strategy=framework` hace que las URL generadas usen `https`, y Swagger usa un servidor relativo (`/`) para llamar a la API en el mismo dominio.
 
 ## 4. Autenticación JWT
 
@@ -169,15 +178,15 @@ sequenceDiagram
 Detalles de la implementación:
 
 - El token es un JWT firmado con HS256 que lleva el usuario (`sub`) y sus roles (`roles`). Duración de 1 hora (`JWT_EXPIRATION_MS`, por defecto 3600000). No hay refresh token.
-- El secreto sale de la variable `JWT_SECRET` (hay un valor por defecto solo para desarrollo que **debe cambiarse** en producción).
+- El secreto sale de la variable `JWT_SECRET`, sin valor por defecto: si falta, la aplicación no arranca.
 - Sesión `STATELESS` y CSRF desactivado (la API no usa cookies).
 - Rutas públicas: `POST /api/auth/login` y la documentación (`/swagger-ui/**`, `/swagger-ui.html`, `/v3/api-docs/**`). Todo lo demás exige token (`anyRequest().authenticated()`).
 - Los errores 401 y 403 de la capa de seguridad (`RestSecurityErrorHandler`) devuelven el mismo formato JSON que el resto de la API.
-- El usuario administrador inicial lo crea `DataInitializer` al arrancar, con las credenciales de `ADMIN_USER` y `ADMIN_PASSWORD`. Los demás usuarios solo los crea un ADMIN (`POST /api/auth/register` o `POST /api/usuarios`).
+- El usuario administrador inicial lo crea `DataInitializer` en el primer arranque, con las credenciales de `ADMIN_USER` y `ADMIN_PASSWORD` (obligatoria). Si el usuario ya existe no se modifica, así que su contraseña se cambia desde la aplicación. Los demás usuarios solo los crea un ADMIN (`POST /api/auth/register` o `POST /api/usuarios`).
 
 ## 5. Modelo de seguridad
 
-La autorización se declara con `@PreAuthorize` en cada método de las controladoras (`@EnableMethodSecurity`). Muchas lecturas de catálogos no tienen `@PreAuthorize` y las puede consultar cualquier usuario autenticado. Resumen por recurso, generado a partir de los 219 endpoints reales:
+La autorización se declara con `@PreAuthorize` en cada método de las controladoras (`@EnableMethodSecurity`). Solo las lecturas de catálogos (tipos, estados, departamentos, clínicas, especialidades, enfermeros) no tienen `@PreAuthorize` y las puede consultar cualquier usuario autenticado; los datos clínicos y de caja se leen solo con el rol correspondiente. Resumen por recurso, generado a partir de los 219 endpoints reales:
 
 - **E**: puede ejecutar todas las operaciones de escritura (POST, PUT, PATCH y DELETE) del recurso.
 - **E\***: puede ejecutar solo algunas operaciones de escritura (por ejemplo crear pero no desactivar).
@@ -205,32 +214,32 @@ La autorización se declara con `@PreAuthorize` en cada método de las controlad
 | Alergias | E | E* | L | L | - | - |
 | Tipos de sangre | E | L | L | L | L | L |
 | **Clínica (consulta externa)** | | | | | | |
-| Citas | E | E* | L | E* | L | L |
+| Citas | E | E* | L | E* | - | - |
 | Estados de cita | E | L | L | L | L | L |
-| Consultas | E | E* | L | L | L | L |
-| Diagnósticos | E | E* | L | L | L | L |
+| Consultas | E | E* | L | - | - | - |
+| Diagnósticos | E | E* | L | - | - | - |
 | Tipos de diagnóstico | E | L | L | L | L | L |
-| Diagnóstico por consulta | E | E | L | L | L | L |
-| Tratamientos | E | E* | L | L | L | L |
+| Diagnóstico por consulta | E | E | L | - | - | - |
+| Tratamientos | E | E* | L | - | L | - |
 | **Emergencias** | | | | | | |
-| Emergencia | E | E* | E* | L | L | L |
+| Emergencia | E | E* | E* | L | - | - |
 | Triaje | E | E* | E* | L | - | - |
 | Niveles de urgencia | E | L | L | L | - | - |
 | Procedimientos de emergencia | E | E* | L | - | - | - |
 | **Hospitalización** | | | | | | |
 | Hospitalizaciones | E | E* | L* | E* | - | L* |
 | Estados de hospitalización | E | L | L | L | L | L |
-| Asignación de enfermeros | E | L | L | L | L | L |
+| Asignación de enfermeros | E | L | L | L | - | - |
 | Habitaciones | E | L | L | L | - | - |
 | Tipos de habitación | E | L | L | L | L | L |
 | Estados de habitación | E | L | L | L | L | L |
 | **Farmacia** | | | | | | |
-| Medicamentos | E | E* | L | L | E* | L |
+| Medicamentos | E | E* | L | - | E* | - |
 | Tratamiento – medicamentos | E | E | - | - | L | - |
 | **Facturación** | | | | | | |
-| Facturas | E | L* | L* | E* | L* | E* |
-| Detalle de factura | E | L | L | E* | L | E* |
-| Cuentas | E | L | L | L | L | E* |
+| Facturas | E | - | - | E* | - | E* |
+| Detalle de factura | E | - | - | E* | - | E* |
+| Cuentas | E | - | - | L | - | E* |
 | Pagos | E | - | - | - | - | E* |
 | Estados de factura | E | L | L | L | L | L |
 | Métodos de pago | E | - | - | L | - | L |
@@ -239,7 +248,8 @@ La autorización se declara con `@PreAuthorize` en cada método de las controlad
 
 Observaciones:
 
-- Los GET sin `@PreAuthorize` aparecen como **L** para todos los roles (catálogos, estados, etc.). En facturas, cuentas y detalle de factura la lectura general también está abierta a cualquier usuario autenticado; es una política de lectura pendiente de definir (ver [sección 8](#8-decisiones-de-diseño)).
+- Los GET sin `@PreAuthorize` (catálogos y estados) aparecen como **L** para todos los roles.
+- ENFERMERO lee medicamentos (para mostrar los nombres en el historial del paciente) y FARMACEUTICO lee tratamientos (para ver a qué tratamiento pertenece cada medicamento recetado).
 - `DELETE` en la mayoría de los recursos es solo de ADMIN (desactivación lógica).
 - El frontend replica esta tabla en `frontend/src/config/menu.js` para mostrar solo lo que cada rol puede usar, pero el backend es quien impone los permisos.
 
@@ -266,9 +276,9 @@ Observaciones:
 | 401 | `AuthenticationException` y entry point de seguridad | Token ausente, inválido o vencido; usuario inactivo. |
 | 403 | `AccessDeniedException` | El rol no puede ejecutar la operación. |
 | 404 | `RecursoNoEncontradoException` | El recurso de la URL no existe. |
-| 409 | `DuplicadoException`, `IllegalStateException` | DPI repetido, par ya asignado, desactivar algo con dependientes activos. |
+| 409 | `DuplicadoException`, `IllegalStateException`, `DataIntegrityViolationException` | DPI repetido, par ya asignado, desactivar algo con dependientes activos, restricción de la base de datos (mensaje genérico, sin detalle SQL). |
 | 422 | `ReglaNegocioException` | Referencia inexistente o inactiva en el cuerpo, fechas incoherentes, stock insuficiente, transición no permitida. |
-| 500 | `Exception` genérica | Error inesperado; el mensaje no expone detalles internos. |
+| 500 | `Exception` genérica | Error inesperado; el cliente recibe "Error interno del servidor" y el detalle queda en el log. |
 
 Convención aplicada en los servicios: obligatoriedad, formato y tamaños se validan con Bean Validation en los DTO (400 con `detalles`); las reglas que dependen del estado del sistema se validan en el servicio (409 o 422); un id de la URL inexistente da 404 y un id inexistente dentro del cuerpo da 422.
 
@@ -520,13 +530,12 @@ Restricciones de la base que respaldan las reglas de negocio: `total = subtotal 
 - **Estados por nombre:** `EstadosCatalogo` resuelve los estados base (hospitalización Activa o Alta, habitación Disponible, Ocupada o Mantenimiento, factura Pendiente, Pagada o Cancelada) con caché; los catálogos protegen esos valores base contra cambios.
 - **El servidor calcula los importes de las facturas** (`CalculoImportes`, IVA configurable): el cliente no puede fijar subtotal, IVA ni total.
 - **Seguridad con JWT sin estado:** sin sesiones, sin cookies y sin CSRF. Un token de un usuario desactivado deja de funcionar al instante porque el filtro consulta al usuario.
-- **Permisos de lectura abiertos en catálogos:** cualquier usuario autenticado lee catálogos y estados; la escritura es restringida por rol.
+- **Permisos de lectura abiertos solo en catálogos:** cualquier usuario autenticado lee catálogos y estados; los datos clínicos y de caja se leen por rol y la escritura es restringida por rol.
 - **Esquema SQL propio:** el esquema se crea con `Hosp_postgres.sql` y Hibernate no lo modifica; esto evita cambios accidentales en la base.
 - **Pruebas unitarias con Mockito sobre servicios** (ver [pruebas.md](pruebas.md)); la prueba de integración con base de datos es opcional.
 
 Pendientes conocidos:
 
-- La lectura de facturas, líneas y cuentas está abierta a cualquier usuario autenticado (política por definir).
 - No hay renovación del token: al vencer hay que iniciar sesión otra vez.
 - No hay pruebas automáticas de la interfaz.
 - No hay endpoint para dispensar recetas con descuento automático de stock: el stock se ajusta con `PATCH /api/medicamentos/{id}/stock`.
@@ -543,12 +552,12 @@ La entrega 1 fue un diseño previo a la implementación. Estas son las diferenci
 | Recetas | Tabla `recetas` y `POST /api/recetas/{id}/dispensar` (descuenta stock) | Medicamentos por tratamiento (`/api/tratamiento-medicamento`) y ajuste manual de stock; no hay dispensación automática. |
 | Emergencia y hospitalización | `hospitalizaciones.id_emergencia`; estados y destino de alta de emergencia en catálogos | No hay vínculo entre hospitalización y emergencia; la emergencia se cierra con `fecha_hora_alta`. |
 | Endpoints | 84 endpoints | 219 endpoints (CRUD completo de catálogos y filtros adicionales). |
-| Rutas | Prefijo `/api`; listas paginadas con `page` y `size` | `/api/...` y `/api/v1/paciente` para pacientes; listados sin paginación. |
+| Rutas | Prefijo `/api`; listas paginadas con `page` y `size` | Prefijo `/api` en todos los recursos; listados sin paginación. |
 | Duración del token | 2 horas (7200 s) | 1 hora (`JWT_EXPIRATION_MS`, 3600000). |
 | Respuesta de login | `{ token, tipo, expiraEn, rol }` | `{ token, type }`; el rol se consulta con `GET /api/auth/me`. |
 | Roles | Roles en la tabla `roles_usuario` | Tabla `rol`; los 6 roles los crea `DataInitializer` al arrancar. |
 | Propiedad de la consulta | Un médico solo modifica sus propias consultas | No se implementó: el permiso es por rol. |
-| Configuración JPA | `ddl-auto=validate` y `open-in-view=false` | No se fijan esas propiedades; el esquema se crea a mano con el script SQL. |
+| Configuración JPA | `ddl-auto=validate` y `open-in-view=false` | `open-in-view=false`; no se fija `ddl-auto` (Hibernate no toca el esquema, que se crea a mano con el script SQL). |
 | Cuentas | No contempladas | Módulo de cuentas del paciente (`/api/cuentas`) enlazado a los pagos. |
-| Registro de usuarios | `POST /api/auth/register` | Igual, y además CRUD de usuarios en `/api/usuarios` (solo ADMIN); `register` responde 200 en lugar de 201. |
-| Ejecución en la web | API y frontend publicados con HTTPS | [COMPLETAR: estado del despliegue] |
+| Registro de usuarios | `POST /api/auth/register` | Igual (responde 201), y además CRUD de usuarios en `/api/usuarios` (solo ADMIN). |
+| Ejecución en la web | API y frontend publicados con HTTPS | API en Render (Docker) y frontend en Vercel, ambos con HTTPS: [COMPLETAR: URL]. |
