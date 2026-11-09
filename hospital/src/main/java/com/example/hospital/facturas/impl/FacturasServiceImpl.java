@@ -77,7 +77,8 @@ public class FacturasServiceImpl implements FacturasService {
                 f.getTotal(),
                 f.getIdMetodoPago(),
                 f.getIdEstadoFactura(),
-                f.getActivo()
+                f.getActivo(),
+                f.getIdConsulta()
         );
     }
 
@@ -153,6 +154,7 @@ public class FacturasServiceImpl implements FacturasService {
         Facturas entity = new Facturas();
         entity.setIdPaciente(dto.idPaciente());
         entity.setIdHospitalizacion(dto.idHospitalizacion());
+        entity.setIdConsulta(dto.idConsulta());
         entity.setFechaEmision(LocalDateTime.now());
         entity.setSubtotal(BigDecimal.ZERO.setScale(2));
         entity.setIva(BigDecimal.ZERO.setScale(2));

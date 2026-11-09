@@ -7,6 +7,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import com.example.hospital.consultas.dto.ConsultasDTO;
+import com.example.hospital.consultas.dto.MedicamentoConsultaDTO;
+import com.example.hospital.consultas.dto.MedicamentosConsultaDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,9 +26,11 @@ import java.util.List;
 public class ConsultasController {
 
     private final ConsultasService consultasService;
+    private final MedicamentosConsultaService medicamentosConsultaService;
 
-    public ConsultasController(ConsultasService consultasService) {
+    public ConsultasController(ConsultasService consultasService, MedicamentosConsultaService medicamentosConsultaService) {
         this.consultasService = consultasService;
+        this.medicamentosConsultaService = medicamentosConsultaService;
     }
 
     @PreAuthorize("hasAnyRole('ADMIN', 'MEDICO', 'ENFERMERO')")
@@ -73,6 +77,49 @@ public class ConsultasController {
     public ResponseEntity<ConsultasDTO> save(@Valid @RequestBody ConsultasDTO dto) {
         ConsultasDTO creada = consultasService.crear(dto);
         return new ResponseEntity<>(creada, HttpStatus.CREATED);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'MEDICO', 'ENFERMERO')")
+    @GetMapping("/{id}/medicamentos")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Medicamentos cobrados y totales de la factura de la consulta"),
+            @ApiResponse(responseCode = "404", description = "No existe la consulta médica indicada")
+    })
+    @Operation(summary = "Medicamentos de la consulta", description = "Medicamentos recetados en la consulta con su cantidad e importe, y el subtotal, total y estado de la factura de la consulta. Sin factura todavía: `idFactura` null y lista vacía.\n\nRoles permitidos: ADMIN, MEDICO, ENFERMERO.")
+    public MedicamentosConsultaDTO medicamentos(
+            @Parameter(description = "Id de la consulta.", example = "1") @PathVariable Long id) {
+        return medicamentosConsultaService.listar(id);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'MEDICO')")
+    @PostMapping("/{id}/medicamentos")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Medicamento asignado al tratamiento y cobrado en la factura de la consulta"),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos: ver `detalles`"),
+            @ApiResponse(responseCode = "404", description = "No existe la consulta, el tratamiento o el medicamento"),
+            @ApiResponse(responseCode = "409", description = "El medicamento ya está asignado a este tratamiento"),
+            @ApiResponse(responseCode = "422", description = "Consulta de más de 24 horas o inactiva; tratamiento de otra consulta; medicamento o tratamiento inactivo; factura de la consulta ya pagada o cancelada")
+    })
+    @Operation(summary = "Agregar medicamento en la consulta", description = "Asigna el medicamento al tratamiento (de un diagnóstico de la consulta) y lo suma a la factura Pendiente de la consulta como una línea cantidad x precio del medicamento. Si la consulta no tiene factura, la crea. Todo en una transacción.\n\nRoles permitidos: ADMIN, MEDICO.")
+    public ResponseEntity<MedicamentosConsultaDTO> agregarMedicamento(
+            @Parameter(description = "Id de la consulta.", example = "1") @PathVariable Long id,
+            @Valid @RequestBody MedicamentoConsultaDTO dto) {
+        return new ResponseEntity<>(medicamentosConsultaService.agregar(id, dto), HttpStatus.CREATED);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'MEDICO')")
+    @DeleteMapping("/{id}/medicamentos/{idTratamiento}/{idMedicamento}")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Medicamento quitado del tratamiento y de la factura"),
+            @ApiResponse(responseCode = "404", description = "No existe la consulta o la asignación"),
+            @ApiResponse(responseCode = "422", description = "Consulta de más de 24 horas; factura ya pagada o cancelada")
+    })
+    @Operation(summary = "Quitar medicamento de la consulta", description = "Quita el medicamento del tratamiento y su línea de la factura de la consulta (que debe seguir Pendiente).\n\nRoles permitidos: ADMIN, MEDICO.")
+    public MedicamentosConsultaDTO quitarMedicamento(
+            @Parameter(description = "Id de la consulta.", example = "1") @PathVariable Long id,
+            @Parameter(description = "Id del tratamiento.", example = "1") @PathVariable Long idTratamiento,
+            @Parameter(description = "Id del medicamento.", example = "1") @PathVariable Long idMedicamento) {
+        return medicamentosConsultaService.quitar(id, idTratamiento, idMedicamento);
     }
 
     @PreAuthorize("hasAnyRole('ADMIN', 'MEDICO')")

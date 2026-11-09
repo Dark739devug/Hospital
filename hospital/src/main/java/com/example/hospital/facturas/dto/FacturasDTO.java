@@ -32,5 +32,12 @@ public record FacturasDTO(
             + "o automáticamente al liquidarse con pagos.", accessMode = Schema.AccessMode.READ_ONLY)
     Long idEstadoFactura,
     @Schema(description = "Solo lectura: para anular use DELETE.", accessMode = Schema.AccessMode.READ_ONLY)
-    Boolean activo
-) {}
+    Boolean activo,
+    @Schema(description = "Consulta que originó la factura (medicamentos recetados en la consulta). Opcional.", example = "4")
+    Long idConsulta
+) {
+    public FacturasDTO(Long idFactura, Long idPaciente, Long idHospitalizacion, LocalDateTime fechaEmision, BigDecimal subtotal,
+                       BigDecimal iva, BigDecimal total, Long idMetodoPago, Long idEstadoFactura, Boolean activo) {
+        this(idFactura, idPaciente, idHospitalizacion, fechaEmision, subtotal, iva, total, idMetodoPago, idEstadoFactura, activo, null);
+    }
+}
