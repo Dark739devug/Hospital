@@ -52,6 +52,18 @@ export const MODULOS = [
     },
   },
   {
+    clave: 'agenda',
+    icono: 'ui-2_time-alarm',
+    titulo: 'Agenda',
+    ruta: '/agenda',
+    grupo: 'Atención',
+    implementado: true,
+    // GET /api/citas/pendientes está abierto a cualquier usuario autenticado, pero la agenda necesita los nombres de
+    // pacientes y médicos (que solo leen los roles clínicos), así que se ofrece a ellos.
+    // Confirmar una cita usa PATCH /api/citas/{id}/estado/{id}: ADMIN, RECEPCIONISTA, MEDICO.
+    permisos: { ver: CLINICOS, confirmar: [ADMIN, RECEPCIONISTA, MEDICO] },
+  },
+  {
     clave: 'consultas',
     icono: 'files_paper',
     titulo: 'Consultas',

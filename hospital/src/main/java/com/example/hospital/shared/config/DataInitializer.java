@@ -1,5 +1,7 @@
 package com.example.hospital.shared.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.example.hospital.rol.Rol;
 import com.example.hospital.rol.RolRepository;
 import com.example.hospital.usuarios.Usuarios;
@@ -18,6 +20,9 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
+    private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
+    private static final String PASSWORD_ADMIN_POR_DEFECTO = "Admin123*";
+
     // Sin el prefijo ROLE_ (Spring lo agrega internamente)
     private static final List<String> ROLES = List.of("ADMIN", "MEDICO", "ENFERMERO", "RECEPCIONISTA", "FARMACEUTICO",
             "CAJERO");
@@ -34,6 +39,9 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
+        if (PASSWORD_ADMIN_POR_DEFECTO.equals(adminPassword)) {
+            log.warn("El administrador usa la contraseña por defecto: defina la variable de entorno ADMIN_PASSWORD en producción");
+        }
         // 1. Crear roles si no existen
         for (String nombre : ROLES) {
             if (rolRepository.findByNombre(nombre).isEmpty()) {
@@ -42,6 +50,7 @@ public class DataInitializer implements CommandLineRunner {
                 rol.setDescripcion("Rol " + nombre);
                 rol.setActivo(true);
                 rolRepository.save(rol);
+                log.info("Rol {} creado", nombre);
             }
         }
 
@@ -58,7 +67,7 @@ public class DataInitializer implements CommandLineRunner {
             admin.setUltimoAcceso(LocalDateTime.now());
             admin.setIdRol(adminRol.getIdRol());
             usuariosRepository.save(admin);
-            System.out.println(">>> Usuario administrador inicial creado: " + adminUsername);
+            log.info("Usuario administrador inicial creado: {}", adminUsername);
         } else {
             Usuarios admin = adminOpt.get();
             if (!passwordEncoder.matches(adminPassword, admin.getContrasenaHash())) {
@@ -66,8 +75,7 @@ public class DataInitializer implements CommandLineRunner {
                 admin.setEstado(true);
                 admin.setIdRol(adminRol.getIdRol());
                 usuariosRepository.save(admin);
-                System.out.println(
-                        ">>> Contraseña de administrador sincronizada con application.properties: " + adminUsername);
+                log.info("Contraseña del administrador '{}' sincronizada con la configuración", adminUsername);
             }
         }
     }

@@ -1,5 +1,7 @@
 package com.example.hospital.habitacion.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.example.hospital.emergencia.EmergenciaRepository;
 import com.example.hospital.shared.catalogos.EstadosCatalogo;
 import com.example.hospital.shared.exception.DuplicadoException;
@@ -22,6 +24,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class HabitacionServiceImpl implements HabitacionService {
+
+    private static final Logger log = LoggerFactory.getLogger(HabitacionServiceImpl.class);
 
     private final HabitacionRepository habitacionRepository;
     private final EstadoHabitacionRepository estadoHabitacionRepository;
@@ -189,6 +193,7 @@ public class HabitacionServiceImpl implements HabitacionService {
 
         existente.setIdEstadoHabitacion(nuevoEstadoId);
         Habitacion guardada = habitacionRepository.save(existente);
+        log.info("Habitación {} cambió al estado {}", id, nuevoEstadoId);
         return mapToDTO(guardada);
     }
 
@@ -239,6 +244,7 @@ public class HabitacionServiceImpl implements HabitacionService {
         // RN-HAB-07: Borrado lógico sistemático
         existente.setActivo(false);
         habitacionRepository.save(existente);
+        log.info("Habitación {} desactivada", id);
     }
 
     /**

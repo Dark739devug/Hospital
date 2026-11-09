@@ -5,16 +5,20 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Collection;
 import java.util.List;
 
 @Repository
 public interface CitasRepository extends JpaRepository<Citas, Long> {
 
-    // Validar conflicto de horario del médico (en creación)
-    boolean existsByIdMedicoAndFechaAndHoraAndActivoTrue(Long idMedico, LocalDate fecha, LocalTime hora);
+    // Validar conflicto de horario del médico (en creación). `idsEstadoLibres`: estados que liberan el horario
+    // (Cancelada, No asistió): esas citas no lo ocupan aunque sigan activas.
+    boolean existsByIdMedicoAndFechaAndHoraAndActivoTrueAndIdEstadoNotIn(
+            Long idMedico, LocalDate fecha, LocalTime hora, Collection<Long> idsEstadoLibres);
 
     // Validar conflicto de horario del médico (en actualización excluyendo la propia cita)
-    boolean existsByIdMedicoAndFechaAndHoraAndActivoTrueAndIdCitaNot(Long idMedico, LocalDate fecha, LocalTime hora, Long idCita);
+    boolean existsByIdMedicoAndFechaAndHoraAndActivoTrueAndIdEstadoNotInAndIdCitaNot(
+            Long idMedico, LocalDate fecha, LocalTime hora, Collection<Long> idsEstadoLibres, Long idCita);
 
     // Listar citas activas
     List<Citas> findByActivoTrue();
@@ -36,4 +40,7 @@ public interface CitasRepository extends JpaRepository<Citas, Long> {
     List<Citas> findByIdMedicoAndFechaAndActivoTrueOrderByHoraAsc(Long idMedico, LocalDate fecha);
 
     long countByFechaAndActivoTrue(LocalDate fecha);
+
+    // Agenda de citas pendientes: activas y en alguno de los estados indicados, en orden cronológico
+    List<Citas> findByActivoTrueAndIdEstadoInOrderByFechaAscHoraAsc(Collection<Long> idsEstado);
 }

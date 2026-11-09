@@ -18,3 +18,4 @@ export default function Badge({ children, tono = 'gris' }) {
 export function BadgeActivo({ activo }) {
   return activo === false ? <Badge>Inactivo</Badge> : <Badge tono="verde">Activo</Badge>
 }
+

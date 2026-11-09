@@ -6,6 +6,7 @@ import { FormFeedback, FormGroup, Input, Label } from 'reactstrap'
  * - tipo: 'text' | 'email' | 'date' | 'password' | 'select' | 'textarea' ...
  * - Para 'select' pasar `opciones: [{ valor, etiqueta }]` y `placeholder` (opción vacía).
  * - `error` es el mensaje del campo (cliente o `detalles` del backend).
+ * - `adorno` es un elemento opcional superpuesto a la derecha del control (p. ej. un botón de icono).
  * - Dentro de un <Row>, ocupa media fila; con `className="col-12"` ocupa la fila completa.
  */
 export default function FormField({
@@ -19,6 +20,7 @@ export default function FormField({
   opciones = [],
   placeholder,
   ayuda,
+  adorno,
   className = '',
   ...resto
 }) {
@@ -63,7 +65,14 @@ export default function FormField({
           </span>
         )}
       </Label>
-      {control}
+      {adorno ? (
+        <div className="position-relative">
+          {control}
+          {adorno}
+        </div>
+      ) : (
+        control
+      )}
       {ayuda && !error && <small className="form-text text-muted">{ayuda}</small>}
       {error && (
         <FormFeedback id={`${id}-error`} className="d-block">

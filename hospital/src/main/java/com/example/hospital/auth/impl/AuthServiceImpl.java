@@ -1,5 +1,8 @@
 package com.example.hospital.auth.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.hospital.auth.AuthService;
 import com.example.hospital.auth.dto.LoginRequest;
@@ -24,6 +27,8 @@ import java.time.LocalDateTime;
 @Service
 public class AuthServiceImpl implements AuthService {
 
+    private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
+
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final UsuariosRepository usuariosRepository;
@@ -45,9 +50,16 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public LoginResponse login(LoginRequest request) {
-        Authentication auth = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.username(), request.password())
-        );
+        Authentication auth;
+        try {
+            auth = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.username(), request.password())
+            );
+        } catch (AuthenticationException e) {
+            // Nunca se registra la contraseña: solo el usuario y el motivo
+            log.warn("Inicio de sesión fallido para el usuario '{}': {}", request.username(), e.getClass().getSimpleName());
+            throw e;
+        }
 
         UserDetails user = (UserDetails) auth.getPrincipal();
         // Registra el último acceso del usuario
@@ -56,6 +68,7 @@ public class AuthServiceImpl implements AuthService {
             usuariosRepository.save(u);
         });
         String token = jwtService.generar(user);
+        log.info("Inicio de sesión del usuario '{}' con roles {}", user.getUsername(), user.getAuthorities());
         return new LoginResponse(token, "Bearer");
     }
 
@@ -63,6 +76,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public Long register(RegisterRequest request) {
         if (usuariosRepository.findByNombreUsuario(request.username()).isPresent()) {
+            log.warn("Registro rechazado: el usuario '{}' ya existe", request.username());
             throw new DuplicadoException("El usuario ya existe");
         }
 
@@ -79,6 +93,8 @@ public class AuthServiceImpl implements AuthService {
         nuevoUsuario.setIdRol(rol.getIdRol());
 
         Usuarios guardado = usuariosRepository.save(nuevoUsuario);
-        return guardado != null ? guardado.getIdUsuario() : null;
+        Long idUsuario = guardado != null ? guardado.getIdUsuario() : null;
+        log.info("Usuario '{}' registrado con el rol {} (id {})", request.username(), nombreRol, idUsuario);
+        return idUsuario;
     }
 }

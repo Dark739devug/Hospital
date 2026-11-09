@@ -10,6 +10,7 @@ const Inicio = lazy(() => import('./pages/Inicio.jsx'))
 const Login = lazy(() => import('./pages/Login.jsx'))
 const NoAutorizado = lazy(() => import('./pages/NoAutorizado.jsx'))
 const NoEncontrado = lazy(() => import('./pages/NoEncontrado.jsx'))
+const AgendaCitas = lazy(() => import('./pages/citas/AgendaCitas.jsx'))
 const CitaDetalle = lazy(() => import('./pages/citas/CitaDetalle.jsx'))
 const CitaForm = lazy(() => import('./pages/citas/CitaForm.jsx'))
 const CitasLista = lazy(() => import('./pages/citas/CitasLista.jsx'))
@@ -64,6 +65,7 @@ const permisosHabitaciones = obtenerModulo('habitaciones').permisos
 const permisosTriaje = obtenerModulo('triaje').permisos
 const permisosProcedimientos = obtenerModulo('procedimientos').permisos
 const permisosCitas = obtenerModulo('citas').permisos
+const permisosAgenda = obtenerModulo('agenda').permisos
 const permisosConsultas = obtenerModulo('consultas').permisos
 const permisosDiagnosticos = obtenerModulo('diagnosticos').permisos
 const permisosTratamientos = obtenerModulo('tratamientos').permisos
@@ -97,6 +99,9 @@ export default function App() {
             <Route path="/pacientes/:id/editar" element={<PacienteForm />} />
           </Route>
 
+          <Route element={<RoleRoute roles={permisosAgenda.ver} />}>
+            <Route path="/agenda" element={<AgendaCitas />} />
+          </Route>
           <Route element={<RoleRoute roles={permisosCitas.ver} />}>
             <Route path="/citas" element={<CitasLista />} />
             <Route path="/citas/:id" element={<CitaDetalle />} />

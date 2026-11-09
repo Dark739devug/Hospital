@@ -1,6 +1,9 @@
 package com.example.hospital.shared.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -24,9 +27,12 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     @ExceptionHandler(RecursoNoEncontradoException.class)
     public ResponseEntity<ErrorResponse> manejarRecursoNoEncontrado(
             RecursoNoEncontradoException ex, HttpServletRequest request) {
+        log.debug("404 {} {}: {}", request.getMethod(), request.getRequestURI(), ex.getMessage());
         ErrorResponse error = ErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.NOT_FOUND.value())
@@ -40,6 +46,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ReglaNegocioException.class)
     public ResponseEntity<ErrorResponse> manejarReglaNegocio(
             ReglaNegocioException ex, HttpServletRequest request) {
+        log.warn("422 regla de negocio en {} {}: {}", request.getMethod(), request.getRequestURI(), ex.getMessage());
         ErrorResponse error = ErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.UNPROCESSABLE_CONTENT.value())
@@ -53,6 +60,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DuplicadoException.class)
     public ResponseEntity<ErrorResponse> manejarDuplicado(
             DuplicadoException ex, HttpServletRequest request) {
+        log.warn("409 conflicto en {} {}: {}", request.getMethod(), request.getRequestURI(), ex.getMessage());
         ErrorResponse error = ErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.CONFLICT.value())
@@ -66,6 +74,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> manejarIllegalArgument(
             IllegalArgumentException ex, HttpServletRequest request) {
+        log.debug("400 argumento inválido en {} {}: {}", request.getMethod(), request.getRequestURI(), ex.getMessage());
         ErrorResponse error = ErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.BAD_REQUEST.value())
@@ -79,6 +88,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ErrorResponse> manejarIllegalState(
             IllegalStateException ex, HttpServletRequest request) {
+        log.warn("409 estado inválido en {} {}: {}", request.getMethod(), request.getRequestURI(), ex.getMessage());
         ErrorResponse error = ErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.CONFLICT.value())
@@ -92,6 +102,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> manejarValidacion(
             MethodArgumentNotValidException ex, HttpServletRequest request) {
+        log.debug("400 validación en {} {}: {} campo(s) con error", request.getMethod(), request.getRequestURI(), ex.getBindingResult().getFieldErrorCount());
         Map<String, String> detalles = new HashMap<>();
         ex.getBindingResult().getFieldErrors().forEach(err ->
                 detalles.put(err.getField(), err.getDefaultMessage())
@@ -113,6 +124,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> manejarAccesoDenegado(
             AccessDeniedException ex, HttpServletRequest request) {
+        log.warn("403 acceso denegado a {} {} para el usuario {}", request.getMethod(), request.getRequestURI(), usuarioActual(request));
         return construir(HttpStatus.FORBIDDEN, "No tiene permisos para realizar esta acción", request, null);
     }
 
@@ -134,6 +146,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> manejarCuerpoIlegible(
             HttpMessageNotReadableException ex, HttpServletRequest request) {
+        log.debug("400 cuerpo ilegible en {} {}: {}", request.getMethod(), request.getRequestURI(), ex.getMostSpecificCause().getMessage());
         return construir(HttpStatus.BAD_REQUEST,
                 "El cuerpo de la petición es inválido o tiene un formato incorrecto (JSON mal formado, fecha o valor no válido)",
                 request, null);
@@ -186,16 +199,46 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, status);
     }
 
+    // La base rechazó la operación (UNIQUE, FOREIGN KEY o CHECK). Normalmente las reglas del servicio lo evitan antes;
+    // llega aquí en carreras (dos peticiones simultáneas) o si una regla falta en el servicio. Se responde 409 sin
+    // exponer el SQL; el detalle (nombre de la restricción) queda en el log.
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> manejarIntegridadDatos(
+            DataIntegrityViolationException ex, HttpServletRequest request) {
+        String causa = ex.getMostSpecificCause().getMessage();
+        log.warn("409 restricción de la base de datos en {} {} (usuario {}): {}",
+                request.getMethod(), request.getRequestURI(), usuarioActual(request), causa);
+        return construir(HttpStatus.CONFLICT, mensajeIntegridad(causa), request, null);
+    }
+
+    /** Mensaje para el usuario según el tipo de restricción violada (códigos SQLSTATE de PostgreSQL en el texto). */
+    private static String mensajeIntegridad(String causa) {
+        String texto = causa == null ? "" : causa.toLowerCase();
+        if (texto.contains("duplicate key") || texto.contains("llave duplicada") || texto.contains("unique")
+                || texto.contains("unicidad")) {
+            return "Ya existe un registro con esos datos.";
+        }
+        if (texto.contains("foreign key") || texto.contains("llave foránea")) {
+            return "La operación hace referencia a un registro que no existe o que todavía está en uso.";
+        }
+        if (texto.contains("check")) {
+            return "Los datos no cumplen una regla de la base de datos (por ejemplo, un monto o saldo negativo).";
+        }
+        return "La operación entra en conflicto con los datos existentes.";
+    }
+
+    // Error no previsto: se registra completo (con la traza) y al cliente se le devuelve un mensaje genérico,
+    // sin detalles internos (SQL, nombres de clases...).
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> manejarExcepcionGeneral(
             Exception ex, HttpServletRequest request) {
-        ErrorResponse error = ErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
-                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                .error(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase())
-                .message(ex.getMessage() != null ? ex.getMessage() : "Error interno del servidor")
-                .path(request.getRequestURI())
-                .build();
-        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+        log.error("500 error no controlado en {} {} (usuario {})",
+                request.getMethod(), request.getRequestURI(), usuarioActual(request), ex);
+        return construir(HttpStatus.INTERNAL_SERVER_ERROR,
+                "Ocurrió un error interno en el servidor. Si persiste, contacte al administrador.", request, null);
+    }
+
+    private static String usuarioActual(HttpServletRequest request) {
+        return request.getUserPrincipal() != null ? request.getUserPrincipal().getName() : "anónimo";
     }
 }

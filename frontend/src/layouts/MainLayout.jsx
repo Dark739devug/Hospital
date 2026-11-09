@@ -52,7 +52,7 @@ export default function MainLayout() {
             </div>
           </Link>
           <Link to="/" className="simple-text logo-normal">
-            Hospital
+            Novamedic
           </Link>
         </div>
         <div className="sidebar-wrapper" style={{ overflowY: 'auto' }}>

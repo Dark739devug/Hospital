@@ -1,5 +1,7 @@
 package com.example.hospital.facturas.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.example.hospital.estadosfactura.EstadosFactura;
 import com.example.hospital.estadosfactura.EstadosFacturaRepository;
 import com.example.hospital.facturas.CalculoImportes;
@@ -33,6 +35,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class FacturasServiceImpl implements FacturasService {
+
+    private static final Logger log = LoggerFactory.getLogger(FacturasServiceImpl.class);
 
     private final FacturasRepository facturasRepository;
     private final PacienteRepository pacienteRepository;
@@ -156,7 +160,9 @@ public class FacturasServiceImpl implements FacturasService {
         entity.setIdMetodoPago(dto.idMetodoPago());
         entity.setIdEstadoFactura(estados.facturaPendiente());
         entity.setActivo(true);
-        return mapToDTO(facturasRepository.save(entity));
+        Facturas guardada = facturasRepository.save(entity);
+        log.info("Factura {} emitida: paciente {}, hospitalización {}", guardada.getIdFactura(), guardada.getIdPaciente(), guardada.getIdHospitalizacion());
+        return mapToDTO(guardada);
     }
 
     @Override
@@ -246,6 +252,7 @@ public class FacturasServiceImpl implements FacturasService {
         }
 
         existente.setIdEstadoFactura(nuevoEstadoId);
+        log.info("Factura {} cambió al estado {}", id, nuevoEstadoId);
         return mapToDTO(facturasRepository.save(existente));
     }
 
@@ -269,6 +276,7 @@ public class FacturasServiceImpl implements FacturasService {
         }
         existente.setActivo(false);
         facturasRepository.save(existente);
+        log.info("Factura {} anulada", id);
     }
 
     @Override

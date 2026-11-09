@@ -186,7 +186,7 @@ export default function HospitalizacionDetalle() {
 
   const h = hospitalizacion
   const registroActivo = h.activo !== false
-  const abierta = registroActivo && estaActiva(h)
+  const abierta = registroActivo && estaActiva(h, datos.idEstadoActiva)
   const asignaciones = extra?.asignaciones ?? []
   const paciente = datos.pacientesPorId[h.idPaciente]
 

@@ -4,7 +4,7 @@ import { EstadoHospBadge } from '../../components/EstadosBadge.jsx'
 import { useApi } from '../../hooks/useApi.js'
 import { useDatosHospitalizacion } from '../../hooks/useDatosHospitalizacion.js'
 import { formatearFechaHora } from '../../utils/formato.js'
-import { nombreHabitacion } from './utilsHospitalizacion.js'
+import { estaActiva, nombreHabitacion } from './utilsHospitalizacion.js'
 
 /** Sección del detalle del paciente: sus hospitalizaciones (activas primero). */
 export default function PacienteHospitalizaciones({ idPaciente }) {
@@ -13,7 +13,7 @@ export default function PacienteHospitalizaciones({ idPaciente }) {
 
   const filas = (lista ?? [])
     .filter((h) => h.activo !== false)
-    .sort((a, b) => (a.idEstadoHosp === 1 ? -1 : 0) - (b.idEstadoHosp === 1 ? -1 : 0) || String(b.fechaIngreso).localeCompare(String(a.fechaIngreso)))
+    .sort((a, b) => (estaActiva(a, datos.idEstadoActiva) ? -1 : 0) - (estaActiva(b, datos.idEstadoActiva) ? -1 : 0) || String(b.fechaIngreso).localeCompare(String(a.fechaIngreso)))
 
   return (
     <div className="card card-body">

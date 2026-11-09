@@ -1,5 +1,7 @@
 package com.example.hospital.medicamentos.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.example.hospital.medicamentos.Medicamentos;
 import com.example.hospital.medicamentos.MedicamentosRepository;
 import com.example.hospital.medicamentos.MedicamentosService;
@@ -16,6 +18,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class MedicamentosServiceImpl implements MedicamentosService {
+
+    private static final Logger log = LoggerFactory.getLogger(MedicamentosServiceImpl.class);
 
     private final MedicamentosRepository medicamentosRepository;
     private final TratamientoMedicamentoRepository tratamientoMedicamentoRepository;
@@ -186,6 +190,10 @@ public class MedicamentosServiceImpl implements MedicamentosService {
 
         existente.setStock(nuevoStock);
         Medicamentos actualizado = medicamentosRepository.save(existente);
+        log.info("Stock del medicamento {} ajustado en {}: nuevo stock {}", id, cambioStock, actualizado.getStock());
+        if (actualizado.getStockMinimo() != null && actualizado.getStock() <= actualizado.getStockMinimo()) {
+            log.warn("Medicamento {} ({}) con stock bajo: {} (mínimo {})", id, actualizado.getNombreComercial(), actualizado.getStock(), actualizado.getStockMinimo());
+        }
         return mapToDTO(actualizado);
     }
 
@@ -211,6 +219,7 @@ public class MedicamentosServiceImpl implements MedicamentosService {
         // RN-MED-06: Borrado lógico sistemático
         existente.setActivo(false);
         medicamentosRepository.save(existente);
+        log.info("Medicamento {} desactivado", id);
     }
 
     private void validarDatosMedicamento(MedicamentosDTO dto, Long idActual) {

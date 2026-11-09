@@ -10,6 +10,18 @@ export const listarCitas = ({ idPaciente, idMedico, fecha } = {}) => {
   return client.get(RUTAS.citas, { params }).then((r) => r.data)
 }
 
+/**
+ * GET /api/citas/pendientes: citas activas en estado Programada, Confirmada o Reprogramada, ordenadas por fecha y hora.
+ * Filtros opcionales y combinables: idMedico, desde y hasta (YYYY-MM-DD, inclusivos). Sin `desde` incluye las vencidas.
+ */
+export const listarCitasPendientes = ({ idMedico, desde, hasta } = {}) => {
+  const params = {}
+  if (idMedico) params.idMedico = idMedico
+  if (desde) params.desde = desde
+  if (hasta) params.hasta = hasta
+  return client.get(`${RUTAS.citas}/pendientes`, { params }).then((r) => r.data)
+}
+
 export const obtenerCita = (id) => client.get(`${RUTAS.citas}/${id}`).then((r) => r.data)
 export const crearCita = (datos) => client.post(RUTAS.citas, datos).then((r) => r.data)
 export const actualizarCita = (id, datos) => client.put(`${RUTAS.citas}/${id}`, datos).then((r) => r.data)

@@ -4,6 +4,14 @@
 .sidebar .nav li > a i { flex-shrink: 0; }
 .sidebar .nav li > a p { white-space: normal; line-height: 1.35; }
 .sidebar-modulos-titulo { padding: 10px 15px 0 30px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: rgba(255, 255, 255, .6); }
+/* Scroll delgado del menú lateral. Chrome/Edge ignoran ::-webkit-scrollbar si hay scrollbar-width o scrollbar-color, por eso esas van solo para Firefox. */
+.sidebar .sidebar-wrapper::-webkit-scrollbar { width: 6px; height: 6px; }
+.sidebar .sidebar-wrapper::-webkit-scrollbar-track { background: transparent; }
+.sidebar .sidebar-wrapper::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .4); border-radius: 10px; }
+.sidebar .sidebar-wrapper::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, .7); }
+@supports not selector(::-webkit-scrollbar) {
+  .sidebar .sidebar-wrapper { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .5) transparent; }
+}
 .tarjeta-modulo { display: block; color: inherit; transition: transform .15s ease, box-shadow .15s ease; }
 .tarjeta-modulo-texto { min-width: 0; }
 .tarjeta-modulo h5 { font-size: 1.15rem; overflow-wrap: break-word; hyphens: auto; }
@@ -14,8 +22,6 @@
 .dato-valor { white-space: pre-line; margin-bottom: 1rem; }
 .ocupacion-habitacion { display: block; border: 1px solid #e3e3e3; border-radius: 6px; padding: .75rem; color: inherit; height: 100%; }
 .ocupacion-habitacion:hover { border-color: #2CA8FF; color: inherit; text-decoration: none; }
-.login-fondo { min-height: 100vh; position: relative; background: linear-gradient(135deg, #0c2646 0%, #204065 55%, #2CA8FF 100%); }
-.login-contenido { position: relative; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem 1rem; }
 .pantalla-centrada { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
 .modal-backdrop-propio { position: fixed; inset: 0; background: rgba(0, 0, 0, .5); z-index: 1040; }
 .badge-naranja { background-color: #f96332; color: #fff; }
@@ -76,3 +82,92 @@
 .linea-tiempo { list-style: none; margin: 0; padding: 0 0 0 1.75rem; border-left: 2px solid #e3e3e3; }
 .linea-tiempo > li { position: relative; padding: .5rem 0 1rem .5rem; }
 .linea-tiempo-punto { position: absolute; left: -2.55rem; top: .35rem; width: 1.6rem; height: 1.6rem; border-radius: 50%; background: #fff; border: 2px solid #2CA8FF; color: #2CA8FF; display: flex; align-items: center; justify-content: center; font-size: .8rem; }
+
+/* Login: tarjeta dividida (imagen y bienvenida a la izquierda, formulario a la derecha) */
+.login-fondo { --login-azul: #3253d1; --login-azul-oscuro: #2743b4; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; background: linear-gradient(135deg, #0c2646 0%, #204065 55%, #2CA8FF 100%); }
+.login-tarjeta { display: flex; width: 100%; max-width: 1120px; min-height: min(720px, calc(100vh - 48px)); background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 12px 40px rgba(12, 38, 70, .35); }
+.login-lateral { flex: 0 0 46%; display: flex; flex-direction: column; background: var(--login-azul); color: #fff; }
+.login-lateral-imagen { position: relative; flex: 1 1 auto; min-height: 220px; background: #eef1f5; }
+.login-lateral-imagen img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+.login-lateral-info { padding: 32px 48px 40px; }
+.login-lateral-info .login-marca { justify-content: center; margin-bottom: 24px; }
+.login-marca { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; color: var(--login-azul); font-size: 1.6rem; font-weight: 500; }
+.login-marca-cruz { fill: #fff; }
+.login-marca-clara { color: #fff; }
+.login-marca-clara .login-marca-cruz { fill: var(--login-azul); }
+.login-bienvenida { padding: 24px; background: var(--login-azul-oscuro); border-left: 3px solid #fff; }
+.login-bienvenida p { margin: 0; color: #fff; }
+.login-bienvenida-saludo { font-size: 1.15rem; }
+.login-bienvenida-saludo strong { font-size: 2rem; font-weight: 500; }
+.login-bienvenida-sistema { font-size: 1.35rem; font-weight: 500; line-height: 1.3; }
+.login-panel { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; justify-content: center; padding: 40px 32px; }
+.login-panel-contenido { width: 100%; max-width: 350px; }
+.login-titulo { margin: 0 0 6px; font-size: 1.75rem; font-weight: 500; color: #2c2c2c; }
+.login-subtitulo { margin-bottom: 28px; color: #444; }
+.login-form label { color: #2c2c2c; font-size: .85rem; }
+.login-form .form-control { padding: 13px 14px; border-radius: 10px; background-color: #fff; font-size: .9rem; }
+.login-form .form-control:focus { border-color: var(--login-azul); box-shadow: 0 0 0 3px rgba(50, 83, 209, .15); }
+.login-form .form-control.is-invalid { border-color: #dc3545; }
+.login-campo-clave .form-control, .login-campo-clave .form-control.is-invalid { padding-right: 44px; background-image: none; }
+.login-ver-clave { position: absolute; top: 50%; right: 8px; transform: translateY(-50%); display: flex; padding: 6px; background: none; border: 0; border-radius: 6px; color: #8a8a8a; cursor: pointer; }
+.login-ver-clave:hover { color: var(--login-azul); }
+.login-ver-clave:focus-visible { outline: 2px solid var(--login-azul); }
+.login-form .login-boton { margin-top: 24px; padding: 13px; border-radius: 10px; font-size: .95rem; }
+.login-form .login-boton, .login-form .login-boton:disabled, .login-form .login-boton:disabled:hover { background-color: var(--login-azul); border-color: var(--login-azul); }
+.login-form .login-boton:hover, .login-form .login-boton:focus, .login-form .login-boton:not(:disabled):not(.disabled):active { background-color: var(--login-azul-oscuro); border-color: var(--login-azul-oscuro); }
+@media (max-width: 991.98px) {
+  .login-lateral { display: none; }
+  .login-tarjeta { max-width: 460px; min-height: 0; }
+}
+@media (max-width: 575.98px) {
+  .login-fondo { padding: 16px; }
+  .login-panel { padding: 32px 20px; }
+}
+
+/* ---- Agenda de citas pendientes ---- */
+.agenda-filtros { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
+.agenda-filtros > .form-control, .agenda-filtros > select { flex: 1 1 220px; min-width: 0; }
+.agenda-filtro-fecha { display: flex; flex-direction: column; flex: 0 1 180px; }
+.agenda-resumen { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #eee; font-size: .9rem; color: #66615b; }
+.agenda-resumen strong { font-size: 1.15rem; color: #2c2c2c; margin-right: 4px; }
+.agenda-dia { padding: 0; overflow: hidden; }
+.agenda-dia-encabezado { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; padding: 12px 20px; border-bottom: 1px solid #eee; background: #fafafa; }
+.agenda-dia-nombre { font-weight: 600; }
+.agenda-dia-vencida { border-left: 3px solid #ff3636; }
+.agenda-lista { list-style: none; margin: 0; padding: 0; }
+.agenda-cita { display: flex; align-items: center; gap: 16px; padding: 12px 20px; border-bottom: 1px solid #f2f2f2; }
+.agenda-cita:last-child { border-bottom: 0; }
+.agenda-hora { flex: 0 0 56px; font-weight: 600; font-variant-numeric: tabular-nums; color: #2CA8FF; }
+.agenda-detalle { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.agenda-acciones { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.agenda-acciones .badge { margin: 0; }
+@media (max-width: 575.98px) {
+  .agenda-cita { flex-wrap: wrap; gap: 6px 12px; padding: 12px 16px; }
+  .agenda-acciones { flex-basis: 100%; padding-left: 68px; }
+  .agenda-dia-encabezado { padding: 12px 16px; }
+}
+
+/* ---- Calendario de la agenda ---- */
+@media (min-width: 992px) { .agenda-calendario { position: sticky; top: 90px; } }
+.calendario-encabezado { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+.calendario-titulo { font-weight: 600; }
+.calendario-grilla { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.calendario-dia-semana { text-align: center; font-size: .72rem; font-weight: 600; color: #9a9a9a; text-transform: uppercase; padding-bottom: 4px; }
+.calendario-celda { position: relative; aspect-ratio: 1 / 1; min-height: 36px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid transparent; border-radius: 8px; background: transparent; color: #b5b5b5; font-size: .85rem; padding: 0; line-height: 1.1; }
+.calendario-celda:disabled { cursor: default; }
+.calendario-celda-vacia { visibility: hidden; }
+.calendario-con-citas { background: #e8f5ff; color: #1b7fc4; font-weight: 600; cursor: pointer; }
+.calendario-con-citas:hover { border-color: #2CA8FF; }
+.calendario-vencida { background: #ffecec; color: #d42a2a; }
+.calendario-vencida:hover { border-color: #ff3636; }
+.calendario-hoy { border-color: #2CA8FF; color: #2c2c2c; }
+.calendario-seleccionada, .calendario-seleccionada:hover { background: #2CA8FF; border-color: #2CA8FF; color: #fff; }
+.calendario-vencida.calendario-seleccionada { background: #ff3636; border-color: #ff3636; }
+.calendario-celda:focus-visible { outline: 2px solid #2CA8FF; outline-offset: 1px; }
+.calendario-conteo { font-size: .65rem; font-weight: 700; opacity: .85; }
+.calendario-leyenda { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+.calendario-punto { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+.calendario-punto-citas { background: #e8f5ff; border: 1px solid #2CA8FF; }
+.calendario-punto-vencida { background: #ffecec; border: 1px solid #ff3636; }
+.calendario-punto-hoy { border: 1px solid #2CA8FF; }
+.agenda-dia-filtro { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; padding: 10px 16px; border-radius: 8px; background: #e8f5ff; color: #1b5f8f; font-size: .9rem; }

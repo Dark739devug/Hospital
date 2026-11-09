@@ -31,4 +31,10 @@ public interface CitasService {
     void eliminar(Long id);
 
     List<CitasDTO> agendaMedico(Long idMedico, LocalDate fecha);
+
+    /**
+     * Citas pendientes de atender (activas y en estado Programada, Confirmada o Reprogramada), en orden cronológico.
+     * Filtros opcionales y combinables: médico y rango de fechas [desde, hasta] (inclusivo).
+     */
+    List<CitasDTO> pendientes(Long idMedico, LocalDate desde, LocalDate hasta);
 }

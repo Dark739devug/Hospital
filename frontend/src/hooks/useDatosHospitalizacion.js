@@ -1,6 +1,7 @@
 import { listarClinicas, listarEstadosHabitacion, listarEstadosHospitalizacion, listarMedicos, listarTiposHabitacion } from '../api/catalogos.js'
 import { listarHabitaciones } from '../api/habitaciones.js'
 import { listarPacientes } from '../api/pacientes.js'
+import { idEstadoHospActiva } from '../pages/hospitalizaciones/utilsHospitalizacion.js'
 import { mapaPor, useApi } from './useApi.js'
 
 const tolerante = (promesa) => promesa.catch(() => [])
@@ -38,5 +39,7 @@ export function useDatosHospitalizacion() {
     tiposHabPorId: mapaPor(tiposHab, 'idTipoHabitacion'),
     estadosHospPorId: mapaPor(estadosHosp, 'idEstadoHosp'),
     clinicasPorId: mapaPor(clinicas, 'idClinica'),
+    /** id del estado "Activa", resuelto por descripción como hace el backend (EstadosCatalogo), no por id fijo. */
+    idEstadoActiva: idEstadoHospActiva(estadosHosp),
   }
 }

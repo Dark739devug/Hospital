@@ -1,5 +1,7 @@
 package com.example.hospital.hospitalizaciones.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.example.hospital.clinicas.Clinicas;
 import com.example.hospital.shared.catalogos.EstadosCatalogo;
 import com.example.hospital.shared.exception.DuplicadoException;
@@ -28,6 +30,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class HospitalizacionesServiceImpl implements HospitalizacionesService {
+
+    private static final Logger log = LoggerFactory.getLogger(HospitalizacionesServiceImpl.class);
 
     private final HospitalizacionesRepository hospitalizacionesRepository;
     private final PacienteRepository pacienteRepository;
@@ -175,6 +179,7 @@ public class HospitalizacionesServiceImpl implements HospitalizacionesService {
         h.setActivo(true);
 
         Hospitalizaciones guardada = hospitalizacionesRepository.save(h);
+        log.info("Hospitalización {} registrada: paciente {}, habitación {}, médico {}", guardada.getIdHospitalizacion(), guardada.getIdPaciente(), guardada.getIdHabitacion(), guardada.getIdMedicoResponsable());
 
         // RN-14: Si con este ingreso la habitación alcanza su capacidad máxima, actualizar a Ocupada
         if ((ocupacionActual + 1) >= capacidad) {
@@ -273,6 +278,7 @@ public class HospitalizacionesServiceImpl implements HospitalizacionesService {
         existente.setIdClinica(dto.idClinica());
 
         Hospitalizaciones actualizada = hospitalizacionesRepository.save(existente);
+        log.info("Hospitalización {} actualizada (habitación {})", id, actualizada.getIdHabitacion());
         return mapToDTO(actualizada);
     }
 
@@ -304,6 +310,7 @@ public class HospitalizacionesServiceImpl implements HospitalizacionesService {
         existente.setFechaAlta(fechaAltaEfectiva);
 
         Hospitalizaciones guardada = hospitalizacionesRepository.save(existente);
+        log.info("Alta de la hospitalización {} el {}", id, guardada.getFechaAlta());
 
         // RN-15 / RN-26: Al registrar el alta, se deberá liberar la ocupación correspondiente de la habitación
         if (existente.getIdHabitacion() != null) {
@@ -336,6 +343,7 @@ public class HospitalizacionesServiceImpl implements HospitalizacionesService {
         // Borrado lógico para conservar historial (RN-29)
         existente.setActivo(false);
         hospitalizacionesRepository.save(existente);
+        log.info("Hospitalización {} desactivada", id);
     }
 
     @Override

@@ -60,7 +60,6 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-    // ---------- Cadena 1: Swagger (público) ----------
     @Bean
     @Order(1)
     public SecurityFilterChain swaggerChain(HttpSecurity http) throws Exception {

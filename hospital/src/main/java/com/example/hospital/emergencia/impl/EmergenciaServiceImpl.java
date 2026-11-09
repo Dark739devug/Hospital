@@ -1,5 +1,7 @@
 package com.example.hospital.emergencia.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.example.hospital.emergencia.Emergencia;
 import com.example.hospital.shared.exception.DuplicadoException;
 import com.example.hospital.shared.exception.RecursoNoEncontradoException;
@@ -25,6 +27,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class EmergenciaServiceImpl implements EmergenciaService {
+
+    private static final Logger log = LoggerFactory.getLogger(EmergenciaServiceImpl.class);
 
     private final EmergenciaRepository emergenciaRepository;
     private final PacienteRepository pacienteRepository;
@@ -133,6 +137,7 @@ public class EmergenciaServiceImpl implements EmergenciaService {
         entity.setActivo(dto.activo() != null ? dto.activo() : true);
 
         Emergencia guardada = emergenciaRepository.save(entity);
+        log.info("Ingreso a emergencia {} registrado: paciente {}, triaje {}", guardada.getIdEmergencia(), guardada.getIdPaciente() != null ? guardada.getIdPaciente() : "sin identificar", guardada.getIdTriaje());
         return mapToDTO(guardada);
     }
 
@@ -168,6 +173,7 @@ public class EmergenciaServiceImpl implements EmergenciaService {
         }
 
         Emergencia actualizada = emergenciaRepository.save(existente);
+        log.info("Emergencia {} actualizada", id);
         return mapToDTO(actualizada);
     }
 
@@ -199,6 +205,7 @@ public class EmergenciaServiceImpl implements EmergenciaService {
 
         existente.setFechaHoraAlta(altaEfectiva);
         Emergencia guardada = emergenciaRepository.save(existente);
+        log.info("Alta de la emergencia {} el {}", id, guardada.getFechaHoraAlta());
         return mapToDTO(guardada);
     }
 
@@ -220,6 +227,7 @@ public class EmergenciaServiceImpl implements EmergenciaService {
         // Borrado lógico sistemático
         existente.setActivo(false);
         emergenciaRepository.save(existente);
+        log.info("Emergencia {} desactivada", id);
     }
 
     /**

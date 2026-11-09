@@ -1,5 +1,7 @@
 package com.example.hospital.pagos.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.example.hospital.cuentas.Cuentas;
 import com.example.hospital.cuentas.CuentasRepository;
 import com.example.hospital.facturas.CalculoImportes;
@@ -25,6 +27,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class PagosServiceImpl implements PagosService {
+
+    private static final Logger log = LoggerFactory.getLogger(PagosServiceImpl.class);
 
     private final PagosRepository pagosRepository;
     private final FacturasRepository facturasRepository;
@@ -116,6 +120,7 @@ public class PagosServiceImpl implements PagosService {
         entity.setReferencia(limpiar(dto.referencia()));
         entity.setActivo(true);
         Pagos guardado = pagosRepository.save(entity);
+        log.info("Pago {} registrado: factura {}, monto {}", guardado.getIdPago(), guardado.getIdFactura(), guardado.getMonto());
 
         // Saldo en 0 -> la factura queda Pagada
         if (saldo.subtract(dto.monto()).signum() == 0) {
@@ -155,6 +160,7 @@ public class PagosServiceImpl implements PagosService {
 
         existente.setIdMetodoPago(dto.idMetodoPago());
         existente.setReferencia(limpiar(dto.referencia()));
+        log.info("Pago {} corregido", id);
         return mapToDTO(pagosRepository.save(existente));
     }
 
@@ -176,10 +182,12 @@ public class PagosServiceImpl implements PagosService {
         }
         existente.setActivo(false);
         pagosRepository.save(existente);
+        log.info("Pago {} anulado: factura {}, monto {}", id, existente.getIdFactura(), existente.getMonto());
 
         if (Objects.equals(factura.getIdEstadoFactura(), estados.facturaPagada())) {
             factura.setIdEstadoFactura(estados.facturaPendiente());
             facturasRepository.save(factura);
+                log.info("La factura {} vuelve a Pendiente por la anulación del pago {}", factura.getIdFactura(), id);
         }
     }
 

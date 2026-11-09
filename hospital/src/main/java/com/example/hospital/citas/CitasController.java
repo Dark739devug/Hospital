@@ -48,6 +48,15 @@ public class CitasController {
         return citasService.agendaMedico(idMedico, fecha);
     }
 
+    @GetMapping("/pendientes")
+    @Operation(summary = "Agenda de citas pendientes", description = "**Nuevo.** Devuelve las citas activas que aún no se atienden (estado Programada, Confirmada o Reprogramada), ordenadas por fecha y hora. Filtros opcionales y combinables:\n- `idMedico`: solo las de un médico (404 si no existe)\n- `desde` / `hasta` (yyyy-MM-dd, inclusivos): rango de fechas. Sin `desde` también incluye las pendientes de días anteriores (vencidas).\n\nResponde 422 si `desde` es posterior a `hasta`.\n\nAcceso: cualquier usuario autenticado.")
+    public List<CitasDTO> pendientes(
+            @RequestParam(required = false) Long idMedico,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+        return citasService.pendientes(idMedico, desde, hasta);
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Obtener cita por ID", description = "Devuelve el detalle de una cita. Responde 404 si no existe.\n\nAcceso: cualquier usuario autenticado.")
     public CitasDTO findById(@PathVariable Long id) {

@@ -1,9 +1,17 @@
 import { aInputFechaHora, deInputFechaHora } from '../../utils/formato.js'
 
-// El backend fija el id 1 como "Activa" (HospitalizacionesServiceImpl.ESTADO_HOSP_ACTIVA).
-export const ESTADO_HOSP_ACTIVA = 1
+// El backend resuelve el estado "Activa" por su descripción (EstadosCatalogo.HOSP_ACTIVA), no por un id fijo.
+export const DESCRIPCION_HOSP_ACTIVA = 'activa'
 
-export const estaActiva = (h) => h.idEstadoHosp === ESTADO_HOSP_ACTIVA
+/** id del estado "Activa" dentro del catálogo estados-hospitalizacion (undefined si no se pudo leer). */
+export const idEstadoHospActiva = (estadosHosp = []) =>
+  estadosHosp.find((e) => String(e.descripcion ?? '').trim().toLowerCase() === DESCRIPCION_HOSP_ACTIVA)?.idEstadoHosp
+
+/**
+ * La hospitalización está en curso (estado "Activa"). Si no se conoce el id de "Activa" (catálogo no legible),
+ * se usa la ausencia de fecha de alta, que el backend fija al dar de alta.
+ */
+export const estaActiva = (h, idActiva) => (idActiva != null ? h.idEstadoHosp === idActiva : !h.fechaAlta)
 
 export const nombreHabitacion = (h, id) => (h ? `Habitación ${h.numero}` : `Habitación #${id}`)
 
