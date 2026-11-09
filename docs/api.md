@@ -2,7 +2,7 @@
 
 API del sistema de gestión hospitalaria (Spring Boot). Esta guía está pensada para quien vaya a consumir la API desde otro cliente (otro frontend, scripts, Postman, etc.). La referencia interactiva y siempre actualizada es **Swagger UI**; este documento resume lo mismo y se generó leyendo los controladores reales (`@RequestMapping`, `@GetMapping`/`@PostMapping`/..., `@PreAuthorize` y `@Operation`).
 
-- **Total de endpoints documentados: 219** (98 GET, 41 POST, 35 PUT, 7 PATCH y 38 DELETE) repartidos en 40 controladores.
+- **Total de endpoints documentados: 220** (98 GET, 42 POST, 35 PUT, 7 PATCH y 38 DELETE) repartidos en 40 controladores.
 - Formato: JSON (`Content-Type: application/json`), codificación UTF-8.
 - Dirección base en desarrollo: `http://localhost:8080`. En producción: [COMPLETAR: URL de la API en Render].
 - Rutas: todas cuelgan de `/api/<recurso>`.
@@ -33,7 +33,9 @@ Respuesta `200`:
 curl -s http://localhost:8080/api/auth/me -H "Authorization: Bearer <JWT>"
 ```
 
-Respuesta `200` de `/api/auth/me`: `{ "username": "...", "roles": ["ROLE_ADMIN"] }`.
+Respuesta `200` de `/api/auth/me`: `{ "username": "...", "roles": ["ROLE_ADMIN"], "debeCambiarPassword": false, "fechaExpiracionPassword": null }`.
+
+**Contraseña temporal.** Al registrar un médico o enfermero se le crea un usuario con contraseña temporal, que la respuesta de `POST /api/medico` y `POST /api/enfermeros` devuelve una sola vez en `credenciales` (`username`, `passwordTemporal`, `fechaExpiracion`). Vale 24 horas: el login y `/me` indican `debeCambiarPassword: true` y la fecha de vencimiento, y el usuario debe cambiarla con `POST /api/auth/cambiar-password`. Si vence, el login responde **422** y un administrador debe asignarle otra con `PUT /api/usuarios/{id}`; toda contraseña asignada por un administrador queda también como temporal por 24 horas.
 
 Notas sobre el token:
 
@@ -117,7 +119,7 @@ Operaciones con reglas de negocio destacadas:
 
 Los 8 módulos de la rúbrica son: Autenticación, Administración, Pacientes, Clínica, Emergencias, Hospitalización, Farmacia y Facturación. Los reportes (resumen e historial) se añaden como módulo transversal.
 
-## Autenticación y usuarios (13 endpoints)
+## Autenticación y usuarios (14 endpoints)
 
 Login, registro, sesión actual, usuarios y roles.
 
@@ -128,6 +130,7 @@ Login, registro, sesión actual, usuarios y roles.
 | POST | `/api/auth/login` | Público | Iniciar sesión. Cuerpo: `LoginRequest`. | 200, 400, 401 |
 | POST | `/api/auth/register` | ADMIN | Registrar usuario. Cuerpo: `RegisterRequest`. | 200, 400, 401, 409, 422 |
 | GET | `/api/auth/me` | Autenticado | Usuario actual. | 200, 401 |
+| POST | `/api/auth/cambiar-password` | Autenticado | Cambiar la contraseña propia. Cuerpo: `CambiarPasswordRequest` (`passwordActual`, `nuevaPassword`). | 200, 400, 401, 422 |
 
 ### Usuarios (`/api/usuarios`)
 
@@ -200,7 +203,7 @@ Estructura del hospital y personal: departamentos, clínicas, especialidades, m�
 | GET | `/api/medico` | ADMIN, MEDICO, ENFERMERO, RECEPCIONISTA | Listar / buscar médicos. Parámetros: `soloActivos`, `criterio`. | 200, 400, 401, 403 |
 | GET | `/api/medico/{id}` | ADMIN, MEDICO, ENFERMERO, RECEPCIONISTA | Obtener médico por ID. | 200, 400, 401, 403, 422 |
 | GET | `/api/medico/colegiado/{noColegiado}` | ADMIN, MEDICO, ENFERMERO, RECEPCIONISTA | Buscar médico por colegiado. | 200, 401, 403, 422 |
-| POST | `/api/medico` | ADMIN | Registrar médico. Cuerpo: `MedicoDTO`. | 201, 400, 401, 403, 409, 422 |
+| POST | `/api/medico` | ADMIN | Registrar médico y crear su usuario (la respuesta trae `credenciales`). Cuerpo: `MedicoDTO`. | 201, 400, 401, 403, 409, 422 |
 | PUT | `/api/medico/{id}` | ADMIN | Actualizar médico. Cuerpo: `MedicoDTO`. | 200, 400, 401, 403, 409, 422 |
 | PATCH | `/api/medico/{id}/estado` | ADMIN | Activar / desactivar médico. Parámetros: `nuevoEstado`. | 200, 400, 401, 403, 422 |
 | DELETE | `/api/medico/{id}` | ADMIN | Eliminar médico. | 204, 400, 401, 403, 422 |
@@ -222,7 +225,7 @@ Estructura del hospital y personal: departamentos, clínicas, especialidades, m�
 |---|---|---|---|---|
 | GET | `/api/enfermeros` | Autenticado | Listar enfermeros. Parámetros: `soloActivos`. | 200, 400, 401, 403 |
 | GET | `/api/enfermeros/{id}` | Autenticado | Obtener enfermero por ID. | 200, 400, 401, 403, 404 |
-| POST | `/api/enfermeros` | ADMIN | Registrar enfermero. Cuerpo: `EnfermerosDTO`. | 201, 400, 401, 403, 409, 422 |
+| POST | `/api/enfermeros` | ADMIN | Registrar enfermero y crear su usuario (la respuesta trae `credenciales`). Cuerpo: `EnfermerosDTO`. | 201, 400, 401, 403, 409, 422 |
 | PUT | `/api/enfermeros/{id}` | ADMIN | Actualizar enfermero. Cuerpo: `EnfermerosDTO`. | 200, 400, 401, 403, 404, 409, 422 |
 | DELETE | `/api/enfermeros/{id}` | ADMIN | Eliminar enfermero. | 204, 400, 401, 403, 404, 409, 422 |
 
@@ -307,7 +310,7 @@ Citas, consultas, diagnósticos y tratamientos.
 | GET | `/api/consultas` | Autenticado | Listar consultas. Parámetros: `soloActivas`, `idCita`. | 200, 400, 401, 403, 422 |
 | GET | `/api/consultas/{id}` | Autenticado | Obtener consulta por ID. | 200, 400, 401, 403, 404 |
 | POST | `/api/consultas` | ADMIN, MEDICO | Registrar consulta. Cuerpo: `ConsultasDTO`. | 201, 400, 401, 403, 409, 422 |
-| PUT | `/api/consultas/{id}` | ADMIN, MEDICO | Actualizar consulta. Cuerpo: `ConsultasDTO`. | 200, 400, 401, 403, 404, 409, 422 |
+| PUT | `/api/consultas/{id}` | ADMIN, MEDICO | Actualizar consulta (solo durante las 24 horas siguientes a la atención; la fecha/hora no cambia). Cuerpo: `ConsultasDTO`. | 200, 400, 401, 403, 404, 409, 422 |
 | DELETE | `/api/consultas/{id}` | ADMIN | Eliminar consulta. | 204, 400, 401, 403, 404, 409, 422 |
 
 ### Diagnósticos (`/api/diagnosticos`)
@@ -338,8 +341,8 @@ Citas, consultas, diagnósticos y tratamientos.
 | GET | `/api/diagnostico-consulta/consulta/{idConsulta}` | Autenticado | Diagnósticos de una consulta. | 200, 400, 401, 403, 422 |
 | GET | `/api/diagnostico-consulta/diagnostico/{idDiagnostico}` | Autenticado | Consultas con un diagnóstico. | 200, 400, 401, 403, 422 |
 | GET | `/api/diagnostico-consulta/{idDiagnostico}/{idConsulta}` | Autenticado | Obtener relación. | 200, 400, 401, 403, 404, 422 |
-| POST | `/api/diagnostico-consulta` | ADMIN, MEDICO | Asociar diagnóstico a consulta. Cuerpo: `DiagnosticoConsultaDTO`. | 201, 400, 401, 403, 409, 422 |
-| DELETE | `/api/diagnostico-consulta/{idDiagnostico}/{idConsulta}` | ADMIN, MEDICO | Quitar diagnóstico de consulta. | 204, 400, 401, 403, 404, 422 |
+| POST | `/api/diagnostico-consulta` | ADMIN, MEDICO | Asociar diagnóstico a consulta (consulta de menos de 24 horas). Cuerpo: `DiagnosticoConsultaDTO`. | 201, 400, 401, 403, 409, 422 |
+| DELETE | `/api/diagnostico-consulta/{idDiagnostico}/{idConsulta}` | ADMIN, MEDICO | Quitar diagnóstico de consulta (consulta de menos de 24 horas). | 204, 400, 401, 403, 404, 422 |
 
 ### Tratamientos (`/api/tratamiento`)
 

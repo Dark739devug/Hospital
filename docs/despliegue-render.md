@@ -33,6 +33,16 @@ En Windows, si `psql` no está en el PATH: `"C:\Program Files\PostgreSQL\18\bin\
 
 El script crea las 38 tablas y los catálogos iniciales. Los roles y el usuario `admin` los crea la API la primera vez que arranca.
 
+### Actualizar una base que ya estaba desplegada
+
+Si la base se creó con una versión anterior del script, ejecuta los scripts de `hospital/migraciones/` que falten, en orden:
+
+```bash
+psql "<External Database URL>" -f hospital/migraciones/002_password_temporal.sql
+```
+
+El `002` agrega a `usuarios` las columnas de la contraseña temporal. La API también las agrega sola al arrancar; si no puede, lo indica en los logs de Render.
+
 ---
 
 ## 2. Backend (API)

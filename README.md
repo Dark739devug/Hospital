@@ -27,7 +27,7 @@ Una API para gestionar un hospital privado en Guatemala. Atiende tres áreas asi
 | Farmacia | Medicamentos y medicamentos por tratamiento. |
 | Facturación | Facturas, detalle, cuentas y pagos. |
 
-Roles del sistema: `ADMIN`, `MEDICO`, `ENFERMERO`, `RECEPCIONISTA`, `FARMACEUTICO` y `CAJERO`. Son 219 endpoints REST, todos protegidos por token salvo el login.
+Roles del sistema: `ADMIN`, `MEDICO`, `ENFERMERO`, `RECEPCIONISTA`, `FARMACEUTICO` y `CAJERO`. Son 220 endpoints REST, todos protegidos por token salvo el login.
 
 ## Versión publicada
 
@@ -128,6 +128,8 @@ export ADMIN_PASSWORD='<contraseña del administrador>'
 export DB_URL='jdbc:postgresql://localhost:5432/Hospital'
 export DB_USER='postgres'
 ```
+
+En lugar de definirlas en cada terminal, puedes copiar `hospital/.env.example` como `hospital/.env` y completarlo: el backend lo lee al arrancar desde la carpeta `hospital` (por ejemplo, desde IntelliJ). Las variables de entorno tienen prioridad sobre el archivo.
 
 No subas contraseñas al repositorio: el archivo `.gitignore` excluye los `.env`.
 

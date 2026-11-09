@@ -38,7 +38,7 @@ cd hospital
 Resultado esperado de la última ejecución completa (`clean test`):
 
 ```
-Tests run: 391, Failures: 0, Errors: 0, Skipped: 1
+Tests run: 407, Failures: 0, Errors: 0, Skipped: 1
 BUILD SUCCESS
 ```
 
@@ -92,7 +92,7 @@ Todos los módulos superan con holgura el mínimo de 5 pruebas con sentido que p
 
 - Las pruebas son unitarias: no ejercitan Spring, las anotaciones `@PreAuthorize`, el mapeo JPA ni las consultas reales de los repositorios.
 - No hay pruebas automáticas de controladores (`MockMvc`) ni de la interfaz web; esas rutas se verificaron a mano con Swagger y con el frontend.
-- Las 219 rutas y sus roles se documentan en [api.md](api.md), generadas a partir del código.
+- Las 220 rutas y sus roles se documentan en [api.md](api.md), generadas a partir del código.
 
 ## 5. Prueba de integración opcional (con base de datos)
 
