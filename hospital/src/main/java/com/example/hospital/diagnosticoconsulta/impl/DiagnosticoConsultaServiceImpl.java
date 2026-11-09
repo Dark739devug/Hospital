@@ -5,6 +5,7 @@ import com.example.hospital.shared.exception.DuplicadoException;
 import com.example.hospital.shared.exception.RecursoNoEncontradoException;
 import com.example.hospital.shared.exception.ReglaNegocioException;
 import com.example.hospital.consultas.ConsultasRepository;
+import com.example.hospital.consultas.VentanaEdicionConsulta;
 import com.example.hospital.diagnosticoconsulta.DiagnosticoConsulta;
 import com.example.hospital.diagnosticoconsulta.DiagnosticoConsultaRepository;
 import com.example.hospital.diagnosticoconsulta.DiagnosticoConsultaService;
@@ -97,6 +98,8 @@ public class DiagnosticoConsultaServiceImpl implements DiagnosticoConsultaServic
         if (consulta.getActivo() != null && !consulta.getActivo()) {
             throw new ReglaNegocioException("La consulta médica seleccionada se encuentra inactiva");
         }
+        // Solo se agregan diagnósticos a consultas dentro de su ventana de edición (24 horas)
+        VentanaEdicionConsulta.exigirEditable(consulta);
 
         // 2. Validar que el diagnóstico exista y esté activo
         Diagnosticos diagnostico = diagnosticosRepository.findById(dto.idDiagnostico())
@@ -130,6 +133,9 @@ public class DiagnosticoConsultaServiceImpl implements DiagnosticoConsultaServic
             throw new RecursoNoEncontradoException("No existe la asociación de diagnóstico " +
                     idDiagnostico + " para la consulta " + idConsulta);
         }
+
+        // Tampoco se quitan diagnósticos de una consulta pasada (fuera de la ventana de 24 horas)
+        consultasRepository.findById(idConsulta).ifPresent(VentanaEdicionConsulta::exigirEditable);
 
         // Al ser tabla de enlace puro de clave compuesta sin bandera propia, se remueve el vínculo
         diagnosticoConsultaRepository.deleteById(id);

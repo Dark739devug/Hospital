@@ -31,12 +31,20 @@ public record UsuariosDTO(
     LocalDateTime ultimoAcceso,
     @Schema(description = "Id del rol del usuario (catálogo /api/rol).", example = "1")
     @NotNull(message = "El rol es obligatorio", groups = Crear.class)
-    Long idRol
+    Long idRol,
+    @Schema(description = "Indica si el usuario debe cambiar su contraseña al iniciar sesión.", example = "false")
+    Boolean debeCambiarPassword,
+    @Schema(description = "Fecha de expiración de la contraseña temporal.", example = "2026-11-10T10:30:00")
+    LocalDateTime fechaExpiracionPassword
 ) {
     /** Grupo de validación de la creación. */
     public interface Crear {}
 
     public static UsuariosDTO sinPassword(Long idUsuario, String nombreUsuario, Boolean estado, LocalDateTime ultimoAcceso, Long idRol) {
-        return new UsuariosDTO(idUsuario, nombreUsuario, null, estado, ultimoAcceso, idRol);
+        return new UsuariosDTO(idUsuario, nombreUsuario, null, estado, ultimoAcceso, idRol, false, null);
+    }
+
+    public static UsuariosDTO sinPassword(Long idUsuario, String nombreUsuario, Boolean estado, LocalDateTime ultimoAcceso, Long idRol, Boolean debeCambiarPassword, LocalDateTime fechaExpiracionPassword) {
+        return new UsuariosDTO(idUsuario, nombreUsuario, null, estado, ultimoAcceso, idRol, debeCambiarPassword, fechaExpiracionPassword);
     }
 }

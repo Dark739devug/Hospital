@@ -135,9 +135,9 @@ En producción, todo con HTTPS:
 
 | Componente | Servicio | URL |
 |---|---|---|
-| Backend | Render, Web Service con Docker (`hospital/Dockerfile`); el puerto lo asigna Render en `PORT` | [COMPLETAR: URL de la API] |
+| Backend | Render, Web Service con Docker (`hospital/Dockerfile`); el puerto lo asigna Render en `PORT` | https://hospital-api-5jqk.onrender.com |
 | Base de datos | Render Postgres; el esquema se carga con `psql` y `Hosp_postgres.sql` | (privada) |
-| Frontend | Vercel, carpeta `frontend/` (`vercel.json` redirige todas las rutas a `index.html`) | [COMPLETAR: URL del frontend] |
+| Frontend | Render Static Site, carpeta `frontend/` (regla de rewrite `/*` → `/index.html`; `vercel.json` queda para desplegar en Vercel si se prefiere) | https://hospital-web-lgmr.onrender.com |
 
 Detrás del proxy HTTPS de Render, `server.forward-headers-strategy=framework` hace que las URL generadas usen `https`, y Swagger usa un servidor relativo (`/`) para llamar a la API en el mismo dominio.
 
@@ -186,7 +186,7 @@ Detalles de la implementación:
 
 ## 5. Modelo de seguridad
 
-La autorización se declara con `@PreAuthorize` en cada método de las controladoras (`@EnableMethodSecurity`). Solo las lecturas de catálogos (tipos, estados, departamentos, clínicas, especialidades, enfermeros) no tienen `@PreAuthorize` y las puede consultar cualquier usuario autenticado; los datos clínicos y de caja se leen solo con el rol correspondiente. Resumen por recurso, generado a partir de los 219 endpoints reales:
+La autorización se declara con `@PreAuthorize` en cada método de las controladoras (`@EnableMethodSecurity`). Solo las lecturas de catálogos (tipos, estados, departamentos, clínicas, especialidades, enfermeros) no tienen `@PreAuthorize` y las puede consultar cualquier usuario autenticado; los datos clínicos y de caja se leen solo con el rol correspondiente. Resumen por recurso, generado a partir de los 220 endpoints reales:
 
 - **E**: puede ejecutar todas las operaciones de escritura (POST, PUT, PATCH y DELETE) del recurso.
 - **E\***: puede ejecutar solo algunas operaciones de escritura (por ejemplo crear pero no desactivar).
@@ -551,7 +551,7 @@ La entrega 1 fue un diseño previo a la implementación. Estas son las diferenci
 | Horario del médico | Tabla `horarios_medico` y validación de la cita dentro del horario | No se implementó; solo se valida que el médico no tenga otra cita activa a la misma fecha y hora. |
 | Recetas | Tabla `recetas` y `POST /api/recetas/{id}/dispensar` (descuenta stock) | Medicamentos por tratamiento (`/api/tratamiento-medicamento`) y ajuste manual de stock; no hay dispensación automática. |
 | Emergencia y hospitalización | `hospitalizaciones.id_emergencia`; estados y destino de alta de emergencia en catálogos | No hay vínculo entre hospitalización y emergencia; la emergencia se cierra con `fecha_hora_alta`. |
-| Endpoints | 84 endpoints | 219 endpoints (CRUD completo de catálogos y filtros adicionales). |
+| Endpoints | 84 endpoints | 220 endpoints (CRUD completo de catálogos y filtros adicionales). |
 | Rutas | Prefijo `/api`; listas paginadas con `page` y `size` | Prefijo `/api` en todos los recursos; listados sin paginación. |
 | Duración del token | 2 horas (7200 s) | 1 hora (`JWT_EXPIRATION_MS`, 3600000). |
 | Respuesta de login | `{ token, tipo, expiraEn, rol }` | `{ token, type }`; el rol se consulta con `GET /api/auth/me`. |
@@ -560,4 +560,4 @@ La entrega 1 fue un diseño previo a la implementación. Estas son las diferenci
 | Configuración JPA | `ddl-auto=validate` y `open-in-view=false` | `open-in-view=false`; no se fija `ddl-auto` (Hibernate no toca el esquema, que se crea a mano con el script SQL). |
 | Cuentas | No contempladas | Módulo de cuentas del paciente (`/api/cuentas`) enlazado a los pagos. |
 | Registro de usuarios | `POST /api/auth/register` | Igual (responde 201), y además CRUD de usuarios en `/api/usuarios` (solo ADMIN). |
-| Ejecución en la web | API y frontend publicados con HTTPS | API en Render (Docker) y frontend en Vercel, ambos con HTTPS: [COMPLETAR: URL]. |
+| Ejecución en la web | API y frontend publicados con HTTPS | API en Render (Docker) y frontend en Render Static Site, ambos con HTTPS: https://hospital-web-lgmr.onrender.com y https://hospital-api-5jqk.onrender.com. |

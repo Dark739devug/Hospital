@@ -13,6 +13,7 @@ import { mapaPor, useApi } from '../../hooks/useApi.js'
 import { useDatosCita } from '../../hooks/useDatosCita.js'
 import { acortar, formatearFechaHora } from '../../utils/formato.js'
 import { nombreMedico, nombrePaciente } from '../citas/utilsCita.js'
+import { consultaEditable } from './utilsConsulta.js'
 
 const TAMANO_PAGINA = 10
 
@@ -85,7 +86,7 @@ export default function ConsultasLista() {
           <Link to={`/consultas/${c.idConsulta}`}>
             Ver
           </Link>
-          {puedeEditar && c.activo !== false && (
+          {puedeEditar && consultaEditable(c) && (
             <Link to={`/consultas/${c.idConsulta}/editar`}>
               Editar
             </Link>

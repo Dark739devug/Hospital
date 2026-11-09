@@ -98,6 +98,10 @@ export default function MainLayout() {
                 <div className="font-weight-bold">{usuario?.username}</div>
                 <small>{ETIQUETAS_ROL[rol] ?? rol}</small>
               </div>
+              <Link to="/cambiar-password" className="btn btn-neutral btn-sm btn-round mr-2" title="Cambiar contraseña">
+                <i className="now-ui-icons ui-1_lock-circle-open" />
+                <span className="d-none d-md-inline ml-1">Contraseña</span>
+              </Link>
               <Button color="neutral" size="sm" className="btn-round" onClick={logout}>
                 <i className="now-ui-icons media-1_button-power mr-1" />
                 Cerrar sesión

@@ -27,15 +27,15 @@ Una API para gestionar un hospital privado en Guatemala. Atiende tres áreas asi
 | Farmacia | Medicamentos y medicamentos por tratamiento. |
 | Facturación | Facturas, detalle, cuentas y pagos. |
 
-Roles del sistema: `ADMIN`, `MEDICO`, `ENFERMERO`, `RECEPCIONISTA`, `FARMACEUTICO` y `CAJERO`. Son 219 endpoints REST, todos protegidos por token salvo el login.
+Roles del sistema: `ADMIN`, `MEDICO`, `ENFERMERO`, `RECEPCIONISTA`, `FARMACEUTICO` y `CAJERO`. Son 220 endpoints REST, todos protegidos por token salvo el login.
 
 ## Versión publicada
 
 | Parte | URL |
 |---|---|
-| Aplicación web (Vercel) | [COMPLETAR: URL del frontend] |
-| API (Render) | [COMPLETAR: URL de la API] |
-| Swagger UI | [COMPLETAR: URL de la API]/swagger-ui.html |
+| Aplicación web (Render, Static Site) | https://hospital-web-lgmr.onrender.com |
+| API (Render) | https://hospital-api-5jqk.onrender.com |
+| Swagger UI | https://hospital-api-5jqk.onrender.com/swagger-ui.html |
 
 Usuario de prueba: [COMPLETAR: usuario y contraseña de demostración, o "solicitarlo al equipo"]. El plan gratuito de Render duerme el servicio tras 15 minutos sin uso: la primera petición puede tardar alrededor de un minuto en responder.
 
@@ -128,6 +128,8 @@ export ADMIN_PASSWORD='<contraseña del administrador>'
 export DB_URL='jdbc:postgresql://localhost:5432/Hospital'
 export DB_USER='postgres'
 ```
+
+En lugar de definirlas en cada terminal, puedes copiar `hospital/.env.example` como `hospital/.env` y completarlo: el backend lo lee al arrancar desde la carpeta `hospital` (por ejemplo, desde IntelliJ). Las variables de entorno tienen prioridad sobre el archivo.
 
 No subas contraseñas al repositorio: el archivo `.gitignore` excluye los `.env`.
 

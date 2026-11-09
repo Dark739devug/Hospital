@@ -16,5 +16,7 @@ public class Usuarios {
     private Boolean estado;
     private java.time.LocalDateTime ultimoAcceso;
     private Long idRol;
+    private Boolean debeCambiarPassword = false;
+    private java.time.LocalDateTime fechaExpiracionPassword;
 
 }

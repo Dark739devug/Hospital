@@ -20,6 +20,7 @@ import com.example.hospital.enfermeros.Enfermeros;
 import com.example.hospital.enfermeros.EnfermerosRepository;
 import com.example.hospital.enfermeros.dto.EnfermerosDTO;
 import com.example.hospital.enfermeros.impl.EnfermerosServiceImpl;
+import com.example.hospital.usuarios.GeneradorCredencialesService;
 import com.example.hospital.especialidadclinica.EspecialidadClinica;
 import com.example.hospital.especialidadclinica.EspecialidadClinicaRepository;
 import com.example.hospital.especialidadclinica.impl.EspecialidadClinicaServiceImpl;
@@ -53,6 +54,7 @@ class DependenciasYDefectosAdministracionTest {
     @Mock MetodosPagoRepository metodosPagoRepository;
     @Mock FacturasRepository facturasRepository;
     @Mock PagosRepository pagosRepository;
+    @Mock GeneradorCredencialesService generadorCredencialesService;
     @InjectMocks DepartamentosServiceImpl departamentos;
     @InjectMocks EnfermerosServiceImpl enfermeros;
     @InjectMocks ClinicasServiceImpl clinicas;

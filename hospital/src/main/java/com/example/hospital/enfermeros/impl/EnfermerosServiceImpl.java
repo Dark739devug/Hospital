@@ -10,6 +10,10 @@ import com.example.hospital.enfermeros.Enfermeros;
 import com.example.hospital.enfermeros.EnfermerosRepository;
 import com.example.hospital.enfermeros.EnfermerosService;
 import com.example.hospital.enfermeros.dto.EnfermerosDTO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import com.example.hospital.usuarios.GeneradorCredencialesService;
+import com.example.hospital.usuarios.dto.CredencialesGeneradasDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,19 +23,28 @@ import java.util.stream.Collectors;
 @Service
 public class EnfermerosServiceImpl implements EnfermerosService {
 
+    private static final Logger log = LoggerFactory.getLogger(EnfermerosServiceImpl.class);
+
     private final EnfermerosRepository enfermerosRepository;
     private final DepartamentosRepository departamentosRepository;
     private final AsignacionEnfermerosRepository asignacionEnfermerosRepository;
+    private final GeneradorCredencialesService generadorCredencialesService;
 
     public EnfermerosServiceImpl(EnfermerosRepository enfermerosRepository,
                                  DepartamentosRepository departamentosRepository,
-                                 AsignacionEnfermerosRepository asignacionEnfermerosRepository) {
+                                 AsignacionEnfermerosRepository asignacionEnfermerosRepository,
+                                 GeneradorCredencialesService generadorCredencialesService) {
         this.enfermerosRepository = enfermerosRepository;
         this.departamentosRepository = departamentosRepository;
         this.asignacionEnfermerosRepository = asignacionEnfermerosRepository;
+        this.generadorCredencialesService = generadorCredencialesService;
     }
 
     private EnfermerosDTO mapToDTO(Enfermeros e) {
+        return mapToDTO(e, null);
+    }
+
+    private EnfermerosDTO mapToDTO(Enfermeros e, CredencialesGeneradasDTO credenciales) {
         return new EnfermerosDTO(
                 e.getIdEnfermero(),
                 e.getCedulaProfesional(),
@@ -40,7 +53,8 @@ public class EnfermerosServiceImpl implements EnfermerosService {
                 e.getApellidoMaterno(),
                 e.getTelefono(),
                 e.getIdDepartamento(),
-                e.getActivo()
+                e.getActivo(),
+                credenciales
         );
     }
 
@@ -134,7 +148,12 @@ public class EnfermerosServiceImpl implements EnfermerosService {
         }
 
         Enfermeros guardado = enfermerosRepository.save(entity);
-        return mapToDTO(guardado);
+
+        // Mismo @Transactional: si no se pueden crear las credenciales, tampoco se registra el enfermero.
+        CredencialesGeneradasDTO credenciales = generadorCredencialesService.generarCredenciales(
+                "enf", guardado.getNombre(), guardado.getApellidoPaterno(), "ENFERMERO");
+
+        return mapToDTO(guardado, credenciales);
     }
 
     @Override

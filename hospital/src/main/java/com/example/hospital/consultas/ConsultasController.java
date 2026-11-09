@@ -82,9 +82,9 @@ public class ConsultasController {
             @ApiResponse(responseCode = "400", description = "Datos del cuerpo inválidos: ver `detalles` con el mensaje de cada campo; Algún parámetro de la ruta o de la consulta tiene un formato inválido (por ejemplo un id no numérico o una fecha mal escrita)"),
             @ApiResponse(responseCode = "404", description = "No existe la consulta médica indicada"),
             @ApiResponse(responseCode = "409", description = "Ya existe una consulta médica registrada para la cita ID"),
-            @ApiResponse(responseCode = "422", description = "La cita médica indicada no existe; La cita médica asociada se encuentra inactiva o cancelada")
+            @ApiResponse(responseCode = "422", description = "La consulta tiene más de 24 horas y ya no se puede modificar; La cita médica indicada no existe; La cita médica asociada se encuentra inactiva o cancelada")
     })
-    @Operation(summary = "Actualizar consulta", description = "Corrige los datos registrados en una consulta.\n\nRoles permitidos: ADMIN, MEDICO.")
+    @Operation(summary = "Actualizar consulta", description = "Corrige los datos registrados en una consulta. Solo durante las 24 horas siguientes a su atención; la fecha/hora no se modifica.\n\nRoles permitidos: ADMIN, MEDICO.")
     public ResponseEntity<ConsultasDTO> update(
             @Parameter(description = "Id del registro en «Consultas» (debe existir).", example = "1") @PathVariable Long id,
             @Valid @RequestBody ConsultasDTO dto) {

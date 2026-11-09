@@ -49,7 +49,15 @@ public class UsuariosServiceImpl implements UsuariosService {
     }
 
     private UsuariosDTO mapToDTO(Usuarios u) {
-        return UsuariosDTO.sinPassword(u.getIdUsuario(), u.getNombreUsuario(), u.getEstado(), u.getUltimoAcceso(), u.getIdRol());
+        return UsuariosDTO.sinPassword(
+                u.getIdUsuario(),
+                u.getNombreUsuario(),
+                u.getEstado(),
+                u.getUltimoAcceso(),
+                u.getIdRol(),
+                u.getDebeCambiarPassword(),
+                u.getFechaExpiracionPassword()
+        );
     }
 
     @Override
@@ -113,6 +121,10 @@ public class UsuariosServiceImpl implements UsuariosService {
                 throw new ReglaNegocioException("La contraseña debe tener al menos " + LARGO_MINIMO_CLAVE + " caracteres");
             }
             existente.setContrasenaHash(passwordEncoder.encode(dto.password()));
+            // Contraseña asignada por un administrador (restablecer acceso): el usuario debe cambiarla
+            // al entrar y vale 24 horas. Esto también desbloquea una contraseña temporal vencida.
+            existente.setDebeCambiarPassword(true);
+            existente.setFechaExpiracionPassword(LocalDateTime.now().plusDays(1));
         }
         if (dto.idRol() != null) {
             rolActivo(dto.idRol());

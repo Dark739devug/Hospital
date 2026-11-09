@@ -30,6 +30,7 @@ public class DataInitializer implements CommandLineRunner {
     private final RolRepository rolRepository;
     private final UsuariosRepository usuariosRepository;
     private final PasswordEncoder passwordEncoder;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     @Value("${app.admin.username:admin}")
     private String adminUsername;
@@ -39,6 +40,15 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
+        // Bases creadas antes de la contraseña temporal (p. ej. la de Render): se agregan las columnas si faltan.
+        // Equivale a migraciones/002_password_temporal.sql.
+        try {
+            jdbcTemplate.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS debe_cambiar_password BOOLEAN NOT NULL DEFAULT FALSE");
+            jdbcTemplate.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS fecha_expiracion_password TIMESTAMP");
+        } catch (Exception e) {
+            log.warn("No se pudieron agregar las columnas de contraseña temporal a usuarios (ejecute migraciones/002_password_temporal.sql): {}", e.getMessage());
+        }
+
         if (PASSWORD_ADMIN_POR_DEFECTO.equals(adminPassword)) {
             log.warn("El administrador usa la contraseña por defecto: defina la variable de entorno ADMIN_PASSWORD en producción");
         }

@@ -8,6 +8,7 @@ import com.example.hospital.citas.CitasRepository;
 import com.example.hospital.consultas.Consultas;
 import com.example.hospital.consultas.ConsultasRepository;
 import com.example.hospital.consultas.ConsultasService;
+import com.example.hospital.consultas.VentanaEdicionConsulta;
 import com.example.hospital.consultas.dto.ConsultasDTO;
 import com.example.hospital.diagnosticoconsulta.DiagnosticoConsultaRepository;
 import com.example.hospital.estadocita.EstadoCita;
@@ -169,9 +170,12 @@ public class ConsultasServiceImpl implements ConsultasService {
         }
 
         Consultas entity = mapToEntity(dto);
-        // Fecha/hora de atención asignada por el servidor si no viene especificada
+        // Fecha/hora de atención asignada por el servidor si no viene especificada. No puede ser futura:
+        // de ella depende la ventana de 24 horas en que la consulta se puede editar.
         if (entity.getFechaHora() == null) {
             entity.setFechaHora(LocalDateTime.now());
+        } else if (entity.getFechaHora().isAfter(LocalDateTime.now())) {
+            throw new ReglaNegocioException("La fecha y hora de la consulta no puede ser futura");
         }
         if (entity.getActivo() == null) {
             entity.setActivo(true);
@@ -207,11 +211,13 @@ public class ConsultasServiceImpl implements ConsultasService {
         Consultas existente = consultasRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe la consulta médica con ID: " + id));
 
+        // Las consultas pasadas son históricas: solo se editan dentro de las 24 horas siguientes a su atención.
+        VentanaEdicionConsulta.exigirEditable(existente);
+
         validarReglasDeNegocio(dto, id);
 
-        if (dto.fechaHora() != null) {
-            existente.setFechaHora(dto.fechaHora());
-        }
+        // La fecha/hora de atención no se cambia al editar (se ignora la del cuerpo): si se pudiera mover,
+        // también se podría reabrir una consulta pasada.
         existente.setSintomas(dto.sintomas() != null ? dto.sintomas().trim() : null);
         existente.setPeso(dto.peso());
         existente.setTalla(dto.talla());

@@ -9,4 +9,7 @@ public interface AuthService {
 
     /** Crea el usuario y devuelve su id. */
     Long register(RegisterRequest request);
+
+    /** Permite al usuario autenticado cambiar su propia contraseña. */
+    void cambiarPassword(String username, String passwordActual, String nuevaPassword);
 }

@@ -7,6 +7,7 @@
 //
 // `implementado: false` => el módulo existe en el backend pero su pantalla llega en una
 // fase futura; no aparece en el menú todavía.
+// `enMenu: false` => el módulo tiene pantallas (se llega por enlaces) pero no entrada propia en el sidebar.
 
 export const ADMIN = 'ADMIN'
 export const MEDICO = 'MEDICO'
@@ -86,6 +87,8 @@ export const MODULOS = [
     ruta: '/diagnosticos',
     grupo: 'Atención',
     implementado: true,
+    // Se registran desde el detalle de la consulta; sus páginas siguen accesibles por enlace.
+    enMenu: false,
     permisos: { ver: [ADMIN, MEDICO, ENFERMERO], crear: [ADMIN, MEDICO], editar: [ADMIN, MEDICO], desactivar: SOLO_ADMIN },
   },
   {
@@ -95,6 +98,8 @@ export const MODULOS = [
     ruta: '/tratamientos',
     grupo: 'Atención',
     implementado: true,
+    // Se registran en la consulta, debajo de cada diagnóstico; sus páginas siguen accesibles por enlace.
+    enMenu: false,
     permisos: { ver: [ADMIN, MEDICO, ENFERMERO], crear: [ADMIN, MEDICO], editar: [ADMIN, MEDICO], desactivar: SOLO_ADMIN },
   },
   {
@@ -290,7 +295,7 @@ export const puede = (rol, claveModulo, operacion = 'ver') =>
 
 /** Módulos implementados que el rol puede al menos listar, agrupados para el sidebar. */
 export function menuParaRol(rol) {
-  const visibles = MODULOS.filter((m) => m.implementado && m.permisos.ver.includes(rol))
+  const visibles = MODULOS.filter((m) => m.implementado && m.enMenu !== false && m.permisos.ver.includes(rol))
   const grupos = []
   for (const modulo of visibles) {
     let grupo = grupos.find((g) => g.titulo === modulo.grupo)

@@ -171,3 +171,4 @@
 .calendario-punto-vencida { background: #ffecec; border: 1px solid #ff3636; }
 .calendario-punto-hoy { border: 1px solid #2CA8FF; }
 .agenda-dia-filtro { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; padding: 10px 16px; border-radius: 8px; background: #e8f5ff; color: #1b5f8f; font-size: .9rem; }
+
