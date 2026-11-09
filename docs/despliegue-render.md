@@ -39,9 +39,10 @@ Si la base se creó con una versión anterior del script, ejecuta los scripts de
 
 ```bash
 psql "<External Database URL>" -f hospital/migraciones/002_password_temporal.sql
+psql "<External Database URL>" -f hospital/migraciones/003_factura_consulta.sql
 ```
 
-El `002` agrega a `usuarios` las columnas de la contraseña temporal. La API también las agrega sola al arrancar; si no puede, lo indica en los logs de Render.
+El `002` agrega a `usuarios` las columnas de la contraseña temporal y el `003` agrega a `facturas` la consulta que las originó. La API también agrega esas columnas sola al arrancar; si no puede, lo indica en los logs de Render.
 
 ---
 

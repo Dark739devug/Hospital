@@ -2,7 +2,7 @@
 
 API del sistema de gestión hospitalaria (Spring Boot). Esta guía está pensada para quien vaya a consumir la API desde otro cliente (otro frontend, scripts, Postman, etc.). La referencia interactiva y siempre actualizada es **Swagger UI**; este documento resume lo mismo y se generó leyendo los controladores reales (`@RequestMapping`, `@GetMapping`/`@PostMapping`/..., `@PreAuthorize` y `@Operation`).
 
-- **Total de endpoints documentados: 220** (98 GET, 42 POST, 35 PUT, 7 PATCH y 38 DELETE) repartidos en 40 controladores.
+- **Total de endpoints documentados: 223** (99 GET, 43 POST, 35 PUT, 7 PATCH y 39 DELETE) repartidos en 40 controladores.
 - Formato: JSON (`Content-Type: application/json`), codificación UTF-8.
 - Dirección base en desarrollo: `http://localhost:8080`. En producción: `https://hospital-api-5jqk.onrender.com`.
 - Rutas: todas cuelgan de `/api/<recurso>`.
@@ -310,6 +310,9 @@ Citas, consultas, diagnósticos y tratamientos.
 | GET | `/api/consultas` | Autenticado | Listar consultas. Parámetros: `soloActivas`, `idCita`. | 200, 400, 401, 403, 422 |
 | GET | `/api/consultas/{id}` | Autenticado | Obtener consulta por ID. | 200, 400, 401, 403, 404 |
 | POST | `/api/consultas` | ADMIN, MEDICO | Registrar consulta. Cuerpo: `ConsultasDTO`. | 201, 400, 401, 403, 409, 422 |
+| GET | `/api/consultas/{id}/medicamentos` | ADMIN, MEDICO, ENFERMERO | Medicamentos recetados en la consulta (cantidad e importe) y subtotal, total y estado de la factura de la consulta. | 200, 401, 403, 404 |
+| POST | `/api/consultas/{id}/medicamentos` | ADMIN, MEDICO | Asignar un medicamento a un tratamiento de la consulta y cobrarlo en la factura de la consulta (la crea Pendiente si no existe). Cuerpo: `MedicamentoConsultaDTO` (`idTratamiento`, `idMedicamento`, `cantidad`). | 201, 400, 401, 403, 404, 409, 422 |
+| DELETE | `/api/consultas/{id}/medicamentos/{idTratamiento}/{idMedicamento}` | ADMIN, MEDICO | Quitar el medicamento del tratamiento y su línea de la factura (Pendiente). | 200, 401, 403, 404, 422 |
 | PUT | `/api/consultas/{id}` | ADMIN, MEDICO | Actualizar consulta (solo durante las 24 horas siguientes a la atención; la fecha/hora no cambia). Cuerpo: `ConsultasDTO`. | 200, 400, 401, 403, 404, 409, 422 |
 | DELETE | `/api/consultas/{id}` | ADMIN | Eliminar consulta. | 204, 400, 401, 403, 404, 409, 422 |
 

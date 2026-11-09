@@ -39,15 +39,18 @@ public class FacturasController {
             @ApiResponse(responseCode = "400", description = "Algún parámetro de la ruta o de la consulta tiene un formato inválido (por ejemplo un id no numérico o una fecha mal escrita)"),
             @ApiResponse(responseCode = "422", description = "La fecha 'desde' no puede ser posterior a la fecha 'hasta'")
     })
-    @Operation(summary = "Listar facturas", description = "Devuelve las facturas. Todos los filtros son opcionales y COMBINABLES:\n- `idPaciente`: facturas de un paciente\n- `idHospitalizacion`: facturas de una hospitalización\n- `idEstadoFactura`: por estado\n- `desde` / `hasta` (YYYY-MM-DD): fecha de emisión, ambos inclusive\n- `soloActivas=true`: oculta las anuladas (por defecto se devuelven también)\n\nErrores: 422 si `desde` es posterior a `hasta`.\n\nRoles permitidos: ADMIN, CAJERO, RECEPCIONISTA.")
+    @Operation(summary = "Listar facturas", description = "Devuelve las facturas. Todos los filtros son opcionales y COMBINABLES:\n- `idPaciente`: facturas de un paciente\n- `idHospitalizacion`: facturas de una hospitalización\n- `idConsulta`: factura de una consulta\n- `idEstadoFactura`: por estado\n- `desde` / `hasta` (YYYY-MM-DD): fecha de emisión, ambos inclusive\n- `soloActivas=true`: oculta las anuladas (por defecto se devuelven también)\n\nErrores: 422 si `desde` es posterior a `hasta`.\n\nRoles permitidos: ADMIN, CAJERO, RECEPCIONISTA.")
     public List<FacturasDTO> findAll(
             @Parameter(description = "Si es true devuelve solo los registros activos; por defecto false (todos).", example = "true") @RequestParam(required = false, defaultValue = "false") boolean soloActivas,
             @Parameter(description = "Id del paciente.", example = "1") @RequestParam(required = false) Long idPaciente,
             @Parameter(description = "Id de la hospitalización.", example = "1") @RequestParam(required = false) Long idHospitalizacion,
+            @Parameter(description = "Id de la consulta que originó la factura.", example = "1") @RequestParam(required = false) Long idConsulta,
             @Parameter(description = "Id del estado de factura (1 = Pendiente, 2 = Pagada, 3 = Cancelada).", example = "1") @RequestParam(required = false) Long idEstadoFactura,
             @Parameter(description = "Fecha inicial (incluida), yyyy-MM-dd.", example = "2026-03-01") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
             @Parameter(description = "Fecha final (incluida), yyyy-MM-dd; no puede ser anterior a desde.", example = "2026-03-31") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
-        return facturasService.buscar(idPaciente, idHospitalizacion, idEstadoFactura, desde, hasta, soloActivas);
+        return facturasService.buscar(idPaciente, idHospitalizacion, idEstadoFactura, desde, hasta, soloActivas).stream()
+                .filter(f -> idConsulta == null || idConsulta.equals(f.idConsulta()))
+                .toList();
     }
 
     @PreAuthorize("hasAnyRole('ADMIN', 'CAJERO', 'RECEPCIONISTA')")

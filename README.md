@@ -27,7 +27,7 @@ Una API para gestionar un hospital privado en Guatemala. Atiende tres áreas asi
 | Farmacia | Medicamentos y medicamentos por tratamiento. |
 | Facturación | Facturas, detalle, cuentas y pagos. |
 
-Roles del sistema: `ADMIN`, `MEDICO`, `ENFERMERO`, `RECEPCIONISTA`, `FARMACEUTICO` y `CAJERO`. Son 220 endpoints REST, todos protegidos por token salvo el login.
+Roles del sistema: `ADMIN`, `MEDICO`, `ENFERMERO`, `RECEPCIONISTA`, `FARMACEUTICO` y `CAJERO`. Son 223 endpoints REST, todos protegidos por token salvo el login.
 
 ## Versión publicada
 
@@ -57,6 +57,7 @@ Usuario de prueba: [COMPLETAR: usuario y contraseña de demostración, o "solici
 ├── README.md             Este archivo
 ├── docs/                 Documentación del proyecto
 │   ├── arquitectura.md   Capas, diagramas, seguridad, modelo de datos y decisiones
+│   ├── presentacion-arquitectura.md  Presentación técnica de la arquitectura y sus decisiones
 │   ├── api.md            Referencia de los endpoints, por módulo
 │   ├── pruebas.md        Estrategia y resultados de las pruebas
 │   └── openapi.json      Especificación OpenAPI exportada de la API
@@ -223,6 +224,7 @@ Son pruebas unitarias con Mockito sobre la capa de servicios: no necesitan base 
 
 | Documento | Contenido |
 |---|---|
+| [docs/presentacion-arquitectura.md](docs/presentacion-arquitectura.md) | Presentación técnica: cómo funciona el sistema, por qué un monolito modular, por qué PostgreSQL, capas del backend y autenticación JWT. |
 | [docs/arquitectura.md](docs/arquitectura.md) | Dominio, diagrama de capas, componentes, autenticación JWT, roles, errores, modelo de datos y diferencias con el diseño de la entrega 1. |
 | [docs/api.md](docs/api.md) | Guía para terceros y tabla de endpoints por módulo (método, ruta, roles, respuestas). |
 | [docs/pruebas.md](docs/pruebas.md) | Estrategia de pruebas y resultados. |

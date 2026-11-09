@@ -5,6 +5,7 @@ import { listarMedicamentos } from '../api/medicamentos.js'
 import { obtenerResumen } from '../api/reportes.js'
 import { useAuth } from '../auth/useAuth.js'
 import ErrorAlert from '../components/ErrorAlert.jsx'
+import TarjetaKpi from '../components/TarjetaKpi.jsx'
 import { ADMIN, CAJERO, ENFERMERO, FARMACEUTICO, MEDICO, RECEPCIONISTA, menuParaRol, puede } from '../config/menu.js'
 import { useApi } from '../hooks/useApi.js'
 import { ETIQUETAS_ROL, formatearFecha } from '../utils/formato.js'
@@ -39,31 +40,6 @@ const KPIS = [
 ]
 
 const porDescripcion = (lista, texto) => lista.find((e) => (e.descripcion ?? e.nombre)?.toLowerCase() === texto)
-
-function TarjetaKpi({ kpi, valor, ruta, titulo }) {
-  const cuerpo = (
-    <Card className="tarjeta-kpi">
-      <CardBody>
-        <div className="d-flex align-items-center">
-          <div className={`kpi-icono mr-3${kpi.alerta && valor > 0 ? ' kpi-alerta' : ''}`} aria-hidden="true">
-            <i className={`now-ui-icons ${kpi.icono}`} />
-          </div>
-          <div className="tarjeta-modulo-texto">
-            <div className="kpi-valor">{valor === null ? '—' : valor}</div>
-            <div className="text-muted small">{titulo}</div>
-          </div>
-        </div>
-      </CardBody>
-    </Card>
-  )
-  return ruta ? (
-    <Link to={ruta} className="tarjeta-modulo" aria-label={`${titulo}: ${valor ?? 'sin dato'}. Abrir módulo`}>
-      {cuerpo}
-    </Link>
-  ) : (
-    cuerpo
-  )
-}
 
 /** Barras horizontales simples (HTML/CSS) para comparar los indicadores del día. */
 function Panorama({ filas }) {

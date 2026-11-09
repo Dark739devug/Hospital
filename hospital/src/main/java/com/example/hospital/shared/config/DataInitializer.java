@@ -45,8 +45,10 @@ public class DataInitializer implements CommandLineRunner {
         try {
             jdbcTemplate.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS debe_cambiar_password BOOLEAN NOT NULL DEFAULT FALSE");
             jdbcTemplate.execute("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS fecha_expiracion_password TIMESTAMP");
+            // migraciones/003: factura de la consulta (medicamentos recetados en la consulta)
+            jdbcTemplate.execute("ALTER TABLE facturas ADD COLUMN IF NOT EXISTS id_consulta BIGINT REFERENCES consultas(id_consulta)");
         } catch (Exception e) {
-            log.warn("No se pudieron agregar las columnas de contraseña temporal a usuarios (ejecute migraciones/002_password_temporal.sql): {}", e.getMessage());
+            log.warn("No se pudieron agregar columnas nuevas (ejecute migraciones/002 y 003): {}", e.getMessage());
         }
 
         if (PASSWORD_ADMIN_POR_DEFECTO.equals(adminPassword)) {

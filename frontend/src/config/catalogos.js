@@ -6,7 +6,7 @@
 //          opciones: [{ valor, etiqueta }] | { ruta, valor, etiqueta, activo } (se piden al backend), valorTexto (select de texto),
 //          soloCrear, enColumna }
 import { RUTAS } from '../api/rutas.js'
-import { ADMIN, MEDICO } from './menu.js'
+import { ADMIN, ENFERMERO, MEDICO } from './menu.js'
 
 const SOLO_ADMIN = [ADMIN]
 
@@ -184,6 +184,23 @@ export const CATALOGOS = [
       { nombre: 'color', etiqueta: 'Color', tipo: 'select', valorTexto: true, opciones: COLORES_URGENCIA },
     ],
     columnas: ['codigo', 'descripcion', 'tiempoMaxEsperaMin', 'color'],
+  },
+  {
+    clave: 'niveles-triaje',
+    titulo: 'Niveles de triaje',
+    singular: 'nivel de triaje',
+    ruta: RUTAS.triaje,
+    idCampo: 'idTriaje',
+    activoCampo: 'activo',
+    // /api/triaje: crear y editar ADMIN, MEDICO y ENFERMERO; desactivar solo ADMIN
+    escribir: [ADMIN, MEDICO, ENFERMERO],
+    desactivar: SOLO_ADMIN,
+    nota: 'Niveles para clasificar la gravedad al ingresar a emergencia. El color se toma del nivel de urgencia con el mismo código.',
+    campos: [
+      { nombre: 'nivelDeEmergencia', etiqueta: 'Nivel', requerido: true, max: 50, ayuda: 'N1, N2, N3, N4 o N5' },
+      { nombre: 'descripcion', etiqueta: 'Descripción', tipo: 'textarea', max: 255 },
+    ],
+    columnas: ['nivelDeEmergencia', 'descripcion'],
   },
   {
     clave: 'tipos-habitacion',

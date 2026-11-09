@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
 import { Alert, Button, Modal, ModalBody, ModalFooter, ModalHeader } from 'reactstrap'
-import client from '../api/client.js'
 import { crud } from '../api/administracion.js'
 import { useAuth } from '../auth/useAuth.js'
 import { BadgeActivo } from './Badge.jsx'
@@ -12,6 +11,7 @@ import FormField from './FormField.jsx'
 import Pagination from './Pagination.jsx'
 import Table from './Table.jsx'
 import { useApi } from '../hooks/useApi.js'
+import { useOpciones } from '../hooks/useOpciones.js'
 import { errorMonto } from '../utils/dinero.js'
 import { normalizarError } from '../utils/errores.js'
 import { acortar, formatearHora, formatearMoneda } from '../utils/formato.js'
@@ -21,23 +21,6 @@ const TAMANO_PAGINA = 10
 const esActivo = (config, fila) => fila[config.activoCampo] !== false
 
 /** Pide las opciones de los campos `select` que vienen de otro endpoint: { nombreCampo: [{ valor, etiqueta }] }. */
-function useOpciones(config) {
-  const remotos = config.campos.filter((c) => c.opciones && !Array.isArray(c.opciones))
-  const clave = `opciones|${config.clave}`
-  const { datos } = useApi(clave, async () => {
-    const pares = await Promise.all(
-      remotos.map(async (c) => {
-        const { ruta, valor, etiqueta, activo } = c.opciones
-        const filas = await client.get(ruta).then((r) => r.data).catch(() => [])
-        return [c.nombre, filas.map((f) => ({ valor: String(f[valor]), etiqueta: f[etiqueta], activo: f[activo] !== false }))]
-      }),
-    )
-    return Object.fromEntries(pares)
-  })
-  return Object.fromEntries(
-    config.campos.filter((c) => c.opciones).map((c) => [c.nombre, Array.isArray(c.opciones) ? c.opciones : (datos?.[c.nombre] ?? [])]),
-  )
-}
 
 const valorInicial = (campo, fila) => {
   const v = fila?.[campo.nombre]
@@ -79,7 +62,8 @@ function validar(campos, form) {
   return errores
 }
 
-function DialogoCatalogo({ config, fila, opciones, protegida, onCerrar, onListo }) {
+/** Diálogo de alta y edición de un registro de catálogo (también lo usa la vista de clínicas). */
+export function DialogoCatalogo({ config, fila, opciones, protegida, onCerrar, onListo }) {
   const api = crud(config.ruta)
   const esEdicion = Boolean(fila)
   const [form, setForm] = useState(() => Object.fromEntries(config.campos.map((c) => [c.nombre, valorInicial(c, fila)])))

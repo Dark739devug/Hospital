@@ -17,6 +17,7 @@ public interface FacturasRepository extends JpaRepository<Facturas, Long> {
     List<Facturas> findByIdHospitalizacion(Long idHospitalizacion);
 
     List<Facturas> findByIdHospitalizacionAndActivoTrue(Long idHospitalizacion);
+    List<Facturas> findByIdConsultaAndActivoTrue(Long idConsulta);
 
     List<Facturas> findByIdEstadoFactura(Long idEstadoFactura);
 

@@ -20,6 +20,8 @@ public class Facturas {
     private Long idFactura;
     private Long idPaciente;
     private Long idHospitalizacion;
+    // Consulta externa que originó la factura (medicamentos recetados en la consulta); null en las demás
+    private Long idConsulta;
     private LocalDateTime fechaEmision;
     private BigDecimal subtotal;
     private BigDecimal iva;

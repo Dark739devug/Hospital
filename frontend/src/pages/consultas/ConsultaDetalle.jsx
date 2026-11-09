@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { obtenerCita } from '../../api/citas.js'
 import {
   asociarDiagnostico,
+  listarMedicamentosConsulta,
   desactivarConsulta,
   listarDiagnosticosDeConsulta,
   obtenerConsulta,
@@ -10,6 +11,7 @@ import {
 } from '../../api/consultas.js'
 import { listarTiposDiagnostico } from '../../api/catalogos.js'
 import { listarDiagnosticos } from '../../api/diagnosticos.js'
+import { listarMedicamentos } from '../../api/medicamentos.js'
 import { listarTratamientos } from '../../api/tratamientos.js'
 import { useAuth } from '../../auth/useAuth.js'
 import Badge, { BadgeActivo } from '../../components/Badge.jsx'
@@ -21,9 +23,10 @@ import { puede } from '../../config/menu.js'
 import { mapaPor, useApi } from '../../hooks/useApi.js'
 import { useDatosCita } from '../../hooks/useDatosCita.js'
 import { normalizarError } from '../../utils/errores.js'
-import { formatearFecha, formatearFechaHora, formatearHora } from '../../utils/formato.js'
+import { formatearFecha, formatearFechaHora, formatearHora, formatearMoneda } from '../../utils/formato.js'
 import { nombreMedico, nombrePaciente } from '../citas/utilsCita.js'
 import DiagnosticoNuevoConsulta from './DiagnosticoNuevoConsulta.jsx'
+import MedicamentosTratamiento from './MedicamentosTratamiento.jsx'
 import { consultaEditable, textoFinEdicion } from './utilsConsulta.js'
 import TratamientoNuevoConsulta from './TratamientoNuevoConsulta.jsx'
 
@@ -38,6 +41,7 @@ export default function ConsultaDetalle() {
   const puedeRegistrarDiagnostico = puedeAsociar && puede(rol, 'diagnosticos', 'crear')
   const puedeVerTratamientos = puede(rol, 'tratamientos', 'ver')
   const puedeCrearTratamiento = puede(rol, 'tratamientos', 'crear')
+  const puedeAgregarMedicamento = puede(rol, 'consultas', 'agregarMedicamento')
 
   const [exito, setExito] = useState(location.state?.mensaje ?? '')
   // Error de un paso posterior al registro (diagnóstico o tratamiento), enviado por el formulario
@@ -68,7 +72,12 @@ export default function ConsultaDetalle() {
         )
       : []
     const tratamientosPorDiagnostico = Object.fromEntries(asociaciones.map((a, i) => [a.idDiagnostico, listas[i] ?? []]))
-    return { consulta, cita, asociaciones, diagnosticos, tipos, tratamientosPorDiagnostico }
+    // Medicamentos cobrados en la factura de la consulta y, para agregar, los medicamentos activos
+    const [medicamentosConsulta, medicamentosActivos] = await Promise.all([
+      listarMedicamentosConsulta(id).catch(() => null),
+      puedeAgregarMedicamento ? listarMedicamentos({ soloActivos: true }).catch(() => []) : [],
+    ])
+    return { consulta, cita, asociaciones, diagnosticos, tipos, tratamientosPorDiagnostico, medicamentosConsulta, medicamentosActivos }
   })
 
   useEffect(() => {
@@ -88,7 +97,8 @@ export default function ConsultaDetalle() {
     )
   }
 
-  const { consulta, cita, asociaciones, diagnosticos, tipos, tratamientosPorDiagnostico } = datos
+  const { consulta, cita, asociaciones, diagnosticos, tipos, tratamientosPorDiagnostico, medicamentosConsulta, medicamentosActivos } = datos
+  const medicamentosDe = (idTratamiento) => (medicamentosConsulta?.medicamentos ?? []).filter((m) => m.idTratamiento === idTratamiento)
   const tiposPorId = mapaPor(tipos, 'idTipoDiagnostico')
   const activa = consulta.activo !== false
   // Pasadas 24 horas desde la atención la consulta queda en solo lectura (el backend también lo exige)
@@ -276,6 +286,19 @@ export default function ConsultaDetalle() {
                                     .join(', ')}
                                 </span>
                               )}
+                              <MedicamentosTratamiento
+                                idConsulta={consulta.idConsulta}
+                                idTratamiento={t.idTratamiento}
+                                items={medicamentosDe(t.idTratamiento)}
+                                medicamentos={medicamentosActivos}
+                                editable={editable && puedeAgregarMedicamento && medicamentosConsulta?.estadoFactura !== 'Pagada' && medicamentosConsulta?.estadoFactura !== 'Cancelada'}
+                                onCambio={(mensaje) => {
+                                  setErrorAccion('')
+                                  setExito(mensaje)
+                                  recargar()
+                                }}
+                                onError={setErrorAccion}
+                              />
                             </li>
                           ))}
                         </ul>
@@ -309,6 +332,23 @@ export default function ConsultaDetalle() {
               )
             })}
           </ul>
+        )}
+
+        {medicamentosConsulta?.idFactura && (
+          <p className="d-flex flex-wrap align-items-center acciones-grupo small border-top pt-3 mt-3 mb-0">
+            <span className="font-weight-bold">
+              {puede(rol, 'facturas', 'ver') ? (
+                <Link to={`/facturas/${medicamentosConsulta.idFactura}`}>Factura #{medicamentosConsulta.idFactura}</Link>
+              ) : (
+                `Factura #${medicamentosConsulta.idFactura}`
+              )}
+            </span>
+            <Badge tono={medicamentosConsulta.estadoFactura === 'Pagada' ? 'verde' : medicamentosConsulta.estadoFactura === 'Cancelada' ? 'gris' : 'ambar'}>
+              {medicamentosConsulta.estadoFactura}
+            </Badge>
+            <span>Subtotal {formatearMoneda(medicamentosConsulta.subtotal)}</span>
+            <span className="font-weight-bold">Total {formatearMoneda(medicamentosConsulta.total)}</span>
+          </p>
         )}
 
         {editable && puedeRegistrarDiagnostico && (
