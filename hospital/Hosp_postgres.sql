@@ -127,7 +127,9 @@ CREATE TABLE usuarios (
                           contrasena_hash VARCHAR(255) NOT NULL,
                           estado BOOLEAN NOT NULL DEFAULT TRUE,
                           ultimo_acceso TIMESTAMP,
-                          id_rol BIGINT NOT NULL REFERENCES rol(id_rol)
+                          id_rol BIGINT NOT NULL REFERENCES rol(id_rol),
+                          debe_cambiar_password BOOLEAN NOT NULL DEFAULT FALSE,
+                          fecha_expiracion_password TIMESTAMP
 );
 
 -- =====================================================

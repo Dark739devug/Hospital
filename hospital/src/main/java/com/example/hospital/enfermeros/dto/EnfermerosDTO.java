@@ -1,5 +1,6 @@
 package com.example.hospital.enfermeros.dto;
 
+import com.example.hospital.usuarios.dto.CredencialesGeneradasDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -30,5 +31,11 @@ public record EnfermerosDTO(
     @NotNull(message = "El departamento es obligatorio")
     Long idDepartamento,
     @Schema(description = "Indica si el registro está activo. Si se omite al crear queda activo; false equivale a un borrado lógico.", example = "true")
-    Boolean activo
-) {}
+    Boolean activo,
+    @Schema(description = "Credencial inicial generada automáticamente al crear. Solo viene en la respuesta de creación.", accessMode = Schema.AccessMode.READ_ONLY)
+    CredencialesGeneradasDTO credenciales
+) {
+    public EnfermerosDTO(Long idEnfermero, String cedulaProfesional, String nombre, String apellidoPaterno, String apellidoMaterno, String telefono, Long idDepartamento, Boolean activo) {
+        this(idEnfermero, cedulaProfesional, nombre, apellidoPaterno, apellidoMaterno, telefono, idDepartamento, activo, null);
+    }
+}

@@ -19,6 +19,8 @@ import com.example.hospital.shared.exception.RecursoNoEncontradoException;
 import com.example.hospital.shared.exception.ReglaNegocioException;
 import java.util.List;
 import java.util.Optional;
+import com.example.hospital.usuarios.GeneradorCredencialesService;
+import com.example.hospital.usuarios.dto.CredencialesGeneradasDTO;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -33,6 +35,7 @@ class MedicoServiceImplTest {
     @Mock HospitalizacionesRepository hospitalizacionesRepository;
     @Mock EmergenciaRepository emergenciaRepository;
     @Mock EstadosCatalogo estados;
+    @Mock GeneradorCredencialesService generadorCredencialesService;
     @InjectMocks MedicoServiceImpl service;
 
     @BeforeEach
@@ -64,6 +67,8 @@ class MedicoServiceImplTest {
             m.setIdMedico(1L);
             return m;
         });
+        when(generadorCredencialesService.generarCredenciales("dr", "Luis", "Perez", "MEDICO"))
+                .thenReturn(new CredencialesGeneradasDTO("dr.lperez", "Temp#1234!", java.time.LocalDateTime.now().plusDays(1), true, "MEDICO", "Dr. Luis Perez"));
 
         MedicoDTO r = service.crear(dto(" 12345 ", " Luis ", " Luis@Mail.com ", "55551234"));
 
@@ -72,6 +77,9 @@ class MedicoServiceImplTest {
         assertThat(r.nombre()).isEqualTo("Luis");
         assertThat(r.email()).isEqualTo("luis@mail.com");
         assertThat(r.estado()).isTrue();
+        assertThat(r.credenciales()).isNotNull();
+        assertThat(r.credenciales().username()).isEqualTo("dr.lperez");
+        assertThat(r.credenciales().passwordTemporal()).isEqualTo("Temp#1234!");
     }
 
     @Test

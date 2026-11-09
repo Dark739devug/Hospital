@@ -19,6 +19,7 @@ import com.example.hospital.shared.exception.ReglaNegocioException;
 import com.example.hospital.shared.security.JwtService;
 import com.example.hospital.usuarios.Usuarios;
 import com.example.hospital.usuarios.UsuariosRepository;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -167,5 +168,89 @@ class AuthServiceImplTest {
 
         verify(usuariosRepository, never()).save(any());
         verify(passwordEncoder, never()).encode(any());
+    }
+
+    private Usuarios usuarioTemporal(LocalDateTime vence) {
+        Usuarios u = new Usuarios();
+        u.setNombreUsuario("dr.lperez");
+        u.setDebeCambiarPassword(true);
+        u.setFechaExpiracionPassword(vence);
+        return u;
+    }
+
+    @Test
+    void login_conContrasenaTemporalVencida_rechazaDespuesDeValidarLaContrasena_yNoGeneraToken() {
+        UserDetails user = User.withUsername("dr.lperez").password("hash").roles("MEDICO").build();
+        when(authenticationManager.authenticate(any(Authentication.class)))
+                .thenReturn(new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
+        when(usuariosRepository.findByNombreUsuario("dr.lperez"))
+                .thenReturn(Optional.of(usuarioTemporal(LocalDateTime.now().minusHours(1))));
+
+        assertThrows(ReglaNegocioException.class, () -> service.login(new LoginRequest("dr.lperez", "Temp#1234!")));
+
+        verify(jwtService, never()).generar(any());
+    }
+
+    @Test
+    void login_conContrasenaTemporalVencida_peroContrasenaIncorrecta_respondeComoCredencialesInvalidas() {
+        when(authenticationManager.authenticate(any(Authentication.class))).thenThrow(new BadCredentialsException("x"));
+        when(usuariosRepository.findByNombreUsuario("dr.lperez"))
+                .thenReturn(Optional.of(usuarioTemporal(LocalDateTime.now().minusHours(1))));
+
+        // No debe revelar que la cuenta tiene una contraseña temporal vencida
+        assertThrows(BadCredentialsException.class, () -> service.login(new LoginRequest("dr.lperez", "mala")));
+    }
+
+    @Test
+    void login_conContrasenaTemporalVigente_indicaQueDebeCambiarla() {
+        UserDetails user = User.withUsername("dr.lperez").password("hash").roles("MEDICO").build();
+        when(authenticationManager.authenticate(any(Authentication.class)))
+                .thenReturn(new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
+        when(jwtService.generar(user)).thenReturn("t");
+        LocalDateTime vence = LocalDateTime.now().plusHours(5);
+        when(usuariosRepository.findByNombreUsuario("dr.lperez")).thenReturn(Optional.of(usuarioTemporal(vence)));
+
+        LoginResponse r = service.login(new LoginRequest("dr.lperez", "Temp#1234!"));
+
+        assertThat(r.debeCambiarPassword()).isTrue();
+        assertThat(r.fechaExpiracionPassword()).isEqualTo(vence);
+    }
+
+    @Test
+    void cambiarPassword_guardaLaNuevaCifrada_yQuitaLaMarcaTemporal() {
+        Usuarios u = usuarioTemporal(LocalDateTime.now().plusHours(5));
+        u.setContrasenaHash("hash-viejo");
+        when(usuariosRepository.findByNombreUsuario("dr.lperez")).thenReturn(Optional.of(u));
+        when(passwordEncoder.matches("Temp#1234!", "hash-viejo")).thenReturn(true);
+        when(passwordEncoder.encode("NuevaClave2026")).thenReturn("hash-nuevo");
+
+        service.cambiarPassword("dr.lperez", "Temp#1234!", "NuevaClave2026");
+
+        assertThat(u.getContrasenaHash()).isEqualTo("hash-nuevo");
+        assertThat(u.getDebeCambiarPassword()).isFalse();
+        assertThat(u.getFechaExpiracionPassword()).isNull();
+        verify(usuariosRepository).save(u);
+    }
+
+    @Test
+    void cambiarPassword_rechazaContrasenaActualIncorrecta_yNoGuarda() {
+        Usuarios u = usuarioTemporal(LocalDateTime.now().plusHours(5));
+        u.setContrasenaHash("hash-viejo");
+        when(usuariosRepository.findByNombreUsuario("dr.lperez")).thenReturn(Optional.of(u));
+        when(passwordEncoder.matches("mala", "hash-viejo")).thenReturn(false);
+
+        assertThrows(ReglaNegocioException.class, () -> service.cambiarPassword("dr.lperez", "mala", "NuevaClave2026"));
+        verify(usuariosRepository, never()).save(any());
+    }
+
+    @Test
+    void cambiarPassword_rechazaRepetirLaMismaContrasena() {
+        Usuarios u = usuarioTemporal(LocalDateTime.now().plusHours(5));
+        u.setContrasenaHash("hash-viejo");
+        when(usuariosRepository.findByNombreUsuario("dr.lperez")).thenReturn(Optional.of(u));
+        when(passwordEncoder.matches("MismaClave2026", "hash-viejo")).thenReturn(true);
+
+        assertThrows(ReglaNegocioException.class, () -> service.cambiarPassword("dr.lperez", "MismaClave2026", "MismaClave2026"));
+        verify(usuariosRepository, never()).save(any());
     }
 }

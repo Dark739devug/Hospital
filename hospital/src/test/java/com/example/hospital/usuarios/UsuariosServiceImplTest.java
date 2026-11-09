@@ -80,7 +80,7 @@ class UsuariosServiceImplTest {
     }
 
     private UsuariosDTO nuevo(String nombre, String clave, Long idRol) {
-        return new UsuariosDTO(null, nombre, clave, null, null, idRol);
+        return new UsuariosDTO(null, nombre, clave, null, null, idRol, null, null);
     }
 
     // ---------- crear ----------
@@ -138,7 +138,7 @@ class UsuariosServiceImplTest {
         when(usuariosRepository.findById(8L)).thenReturn(Optional.of(usuario(8L, "x", CAJERO, true)));
         when(usuariosRepository.existsByNombreUsuarioIgnoreCaseAndIdUsuarioNot("admin", 8L)).thenReturn(true);
 
-        assertThrows(DuplicadoException.class, () -> service.actualizar(new UsuariosDTO(null, "admin", null, null, null, null), 8L));
+        assertThrows(DuplicadoException.class, () -> service.actualizar(new UsuariosDTO(null, "admin", null, null, null, null, null, null), 8L));
     }
 
     @Test
@@ -146,8 +146,8 @@ class UsuariosServiceImplTest {
         when(usuariosRepository.findById(8L)).thenReturn(Optional.of(usuario(8L, "x", CAJERO, true)));
         when(rolRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThrows(ReglaNegocioException.class, () -> service.actualizar(new UsuariosDTO(null, null, null, null, null, 99L), 8L));
-        assertThrows(ReglaNegocioException.class, () -> service.actualizar(new UsuariosDTO(null, null, "corta", null, null, null), 8L));
+        assertThrows(ReglaNegocioException.class, () -> service.actualizar(new UsuariosDTO(null, null, null, null, null, 99L, null, null), 8L));
+        assertThrows(ReglaNegocioException.class, () -> service.actualizar(new UsuariosDTO(null, null, "corta", null, null, null, null, null), 8L));
     }
 
     @Test
@@ -155,7 +155,7 @@ class UsuariosServiceImplTest {
         Usuarios u = usuario(8L, "x", CAJERO, true);
         when(usuariosRepository.findById(8L)).thenReturn(Optional.of(u));
 
-        service.actualizar(new UsuariosDTO(null, null, "OtraClave99", null, null, ADMIN), 8L);
+        service.actualizar(new UsuariosDTO(null, null, "OtraClave99", null, null, ADMIN, null, null), 8L);
 
         assertThat(u.getNombreUsuario()).isEqualTo("x");
         assertThat(u.getEstado()).isTrue();
@@ -164,13 +164,37 @@ class UsuariosServiceImplTest {
     }
 
     @Test
+    void actualizar_conContrasenaNueva_laDejaTemporalPor24Horas_paraRestablecerElAcceso() {
+        Usuarios u = usuario(8L, "x", CAJERO, true);
+        u.setDebeCambiarPassword(true);
+        u.setFechaExpiracionPassword(java.time.LocalDateTime.now().minusDays(2)); // temporal ya vencida
+        when(usuariosRepository.findById(8L)).thenReturn(Optional.of(u));
+
+        service.actualizar(new UsuariosDTO(null, null, "OtraClave99", null, null, null, null, null), 8L);
+
+        assertThat(u.getDebeCambiarPassword()).isTrue();
+        assertThat(u.getFechaExpiracionPassword()).isAfter(java.time.LocalDateTime.now().plusHours(23));
+    }
+
+    @Test
+    void actualizar_sinContrasena_noTocaLaMarcaTemporal() {
+        Usuarios u = usuario(8L, "x", CAJERO, true);
+        when(usuariosRepository.findById(8L)).thenReturn(Optional.of(u));
+
+        service.actualizar(new UsuariosDTO(null, "nuevo", null, null, null, null, null, null), 8L);
+
+        assertThat(u.getDebeCambiarPassword()).isFalse();
+        assertThat(u.getFechaExpiracionPassword()).isNull();
+    }
+
+    @Test
     void actualizar_unAdminNoPuedeDesactivarseNiQuitarseElRolAdAdminASiMismo_aunqueHayaOtrosAdmins() {
         Usuarios yo = usuario(1L, "admin", ADMIN, true);
         when(usuariosRepository.findById(1L)).thenReturn(Optional.of(yo));
         lenient().when(usuariosRepository.countByIdRolAndEstadoTrue(ADMIN)).thenReturn(3L);
 
-        assertThrows(ReglaNegocioException.class, () -> service.actualizar(new UsuariosDTO(null, null, null, false, null, null), 1L));
-        assertThrows(ReglaNegocioException.class, () -> service.actualizar(new UsuariosDTO(null, null, null, null, null, CAJERO), 1L));
+        assertThrows(ReglaNegocioException.class, () -> service.actualizar(new UsuariosDTO(null, null, null, false, null, null, null, null), 1L));
+        assertThrows(ReglaNegocioException.class, () -> service.actualizar(new UsuariosDTO(null, null, null, null, null, CAJERO, null, null), 1L));
 
         assertThat(yo.getEstado()).isTrue();
         assertThat(yo.getIdRol()).isEqualTo(ADMIN);
@@ -182,8 +206,8 @@ class UsuariosServiceImplTest {
         when(usuariosRepository.findById(2L)).thenReturn(Optional.of(otro));
         when(usuariosRepository.countByIdRolAndEstadoTrue(ADMIN)).thenReturn(1L);
 
-        assertThrows(ReglaNegocioException.class, () -> service.actualizar(new UsuariosDTO(null, null, null, false, null, null), 2L));
-        assertThrows(ReglaNegocioException.class, () -> service.actualizar(new UsuariosDTO(null, null, null, null, null, CAJERO), 2L));
+        assertThrows(ReglaNegocioException.class, () -> service.actualizar(new UsuariosDTO(null, null, null, false, null, null, null, null), 2L));
+        assertThrows(ReglaNegocioException.class, () -> service.actualizar(new UsuariosDTO(null, null, null, null, null, CAJERO, null, null), 2L));
 
         assertThat(otro.getEstado()).isTrue();
         assertThat(otro.getIdRol()).isEqualTo(ADMIN);
@@ -195,7 +219,7 @@ class UsuariosServiceImplTest {
         when(usuariosRepository.findById(2L)).thenReturn(Optional.of(otro));
         when(usuariosRepository.countByIdRolAndEstadoTrue(ADMIN)).thenReturn(2L);
 
-        service.actualizar(new UsuariosDTO(null, null, null, false, null, null), 2L);
+        service.actualizar(new UsuariosDTO(null, null, null, false, null, null, null, null), 2L);
 
         assertThat(otro.getEstado()).isFalse();
     }
@@ -205,7 +229,7 @@ class UsuariosServiceImplTest {
         Usuarios u = usuario(8L, "x", CAJERO, true);
         when(usuariosRepository.findById(8L)).thenReturn(Optional.of(u));
 
-        service.actualizar(new UsuariosDTO(null, null, null, false, null, null), 8L);
+        service.actualizar(new UsuariosDTO(null, null, null, false, null, null, null, null), 8L);
 
         assertThat(u.getEstado()).isFalse();
     }
@@ -214,7 +238,7 @@ class UsuariosServiceImplTest {
     void actualizar_y_eliminar_lanzan404_siNoExiste() {
         when(usuariosRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThrows(RecursoNoEncontradoException.class, () -> service.actualizar(new UsuariosDTO(null, "a", null, null, null, null), 99L));
+        assertThrows(RecursoNoEncontradoException.class, () -> service.actualizar(new UsuariosDTO(null, "a", null, null, null, null, null, null), 99L));
         assertThrows(RecursoNoEncontradoException.class, () -> service.eliminar(99L));
     }
 
@@ -257,7 +281,7 @@ class UsuariosServiceImplTest {
 
     @Test
     void dto_alCrear_exigeUsuarioContrasenaYRol_ylaContrasenaMinimaDeOcho() {
-        assertThat(campos(new UsuariosDTO(null, null, null, null, null, null), UsuariosDTO.Crear.class))
+        assertThat(campos(new UsuariosDTO(null, null, null, null, null, null, null, null), UsuariosDTO.Crear.class))
                 .containsExactlyInAnyOrder("nombreUsuario", "password", "idRol");
         assertThat(campos(nuevo("u", "1234567", CAJERO), UsuariosDTO.Crear.class)).containsExactly("password");
         assertThat(campos(nuevo("u", "12345678", CAJERO), UsuariosDTO.Crear.class)).isEmpty();
@@ -266,15 +290,15 @@ class UsuariosServiceImplTest {
 
     @Test
     void dto_alActualizar_todoEsOpcional_peroSiSeEnviaLaContrasenaDebeTenerOchoCaracteres() {
-        assertThat(campos(new UsuariosDTO(null, null, null, null, null, null))).isEmpty();
-        assertThat(campos(new UsuariosDTO(null, null, "corta", null, null, null))).containsExactly("password");
+        assertThat(campos(new UsuariosDTO(null, null, null, null, null, null, null, null))).isEmpty();
+        assertThat(campos(new UsuariosDTO(null, null, "corta", null, null, null, null, null))).containsExactly("password");
     }
 
     @Test
     void dto_laContrasenaNuncaSeSerializa() {
         tools.jackson.databind.json.JsonMapper mapper = tools.jackson.databind.json.JsonMapper.builder().build();
 
-        String json = mapper.writeValueAsString(new UsuariosDTO(1L, "u", "SecretaSecreta", true, null, CAJERO));
+        String json = mapper.writeValueAsString(new UsuariosDTO(1L, "u", "SecretaSecreta", true, null, CAJERO, null, null));
 
         assertThat(json).doesNotContain("password").doesNotContain("SecretaSecreta");
         // pero sí se acepta como entrada

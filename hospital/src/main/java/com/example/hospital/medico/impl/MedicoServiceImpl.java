@@ -14,6 +14,8 @@ import com.example.hospital.medico.MedicoService;
 import com.example.hospital.medico.dto.MedicoDTO;
 import com.example.hospital.shared.exception.RecursoNoEncontradoException;
 import com.example.hospital.shared.exception.ReglaNegocioException;
+import com.example.hospital.usuarios.GeneradorCredencialesService;
+import com.example.hospital.usuarios.dto.CredencialesGeneradasDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,20 +36,27 @@ public class MedicoServiceImpl implements MedicoService {
     private final EmergenciaRepository emergenciaRepository;
     // El estado de hospitalización Activa se resuelve por nombre, no por id fijo
     private final EstadosCatalogo estados;
+    private final GeneradorCredencialesService generadorCredencialesService;
 
     public MedicoServiceImpl(MedicoRepository medicoRepository,
                              CitasRepository citasRepository,
                              HospitalizacionesRepository hospitalizacionesRepository,
                              EmergenciaRepository emergenciaRepository,
-                             EstadosCatalogo estados) {
+                             EstadosCatalogo estados,
+                             GeneradorCredencialesService generadorCredencialesService) {
         this.medicoRepository = medicoRepository;
         this.citasRepository = citasRepository;
         this.hospitalizacionesRepository = hospitalizacionesRepository;
         this.emergenciaRepository = emergenciaRepository;
         this.estados = estados;
+        this.generadorCredencialesService = generadorCredencialesService;
     }
 
     private MedicoDTO mapToDTO(Medico m) {
+        return mapToDTO(m, null);
+    }
+
+    private MedicoDTO mapToDTO(Medico m, CredencialesGeneradasDTO credenciales) {
         return new MedicoDTO(
                 m.getIdMedico(),
                 m.getNoColegiado(),
@@ -56,7 +65,8 @@ public class MedicoServiceImpl implements MedicoService {
                 m.getApellidoMaterno(),
                 m.getTelefono(),
                 m.getEmail(),
-                m.getEstado()
+                m.getEstado(),
+                credenciales
         );
     }
 
@@ -143,7 +153,12 @@ public class MedicoServiceImpl implements MedicoService {
         medico.setEstado(dto.estado() != null ? dto.estado() : true);
 
         Medico guardado = medicoRepository.save(medico);
-        return mapToDTO(guardado);
+
+        // Mismo @Transactional: si no se pueden crear las credenciales, tampoco se registra el médico.
+        CredencialesGeneradasDTO credenciales = generadorCredencialesService.generarCredenciales(
+                "dr", guardado.getNombre(), guardado.getApellidoPaterno(), "MEDICO");
+
+        return mapToDTO(guardado, credenciales);
     }
 
     @Override

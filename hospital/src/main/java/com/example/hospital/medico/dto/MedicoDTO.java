@@ -1,5 +1,6 @@
 package com.example.hospital.medico.dto;
 
+import com.example.hospital.usuarios.dto.CredencialesGeneradasDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -31,5 +32,11 @@ public record MedicoDTO(
     @Pattern(regexp = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$", message = "El formato del correo electrónico no es válido")
     String email,
     @Schema(description = "Indica si el médico está activo.", example = "true")
-    Boolean estado
-) {}
+    Boolean estado,
+    @Schema(description = "Credencial inicial generada automáticamente al crear. Solo viene en la respuesta de creación.", accessMode = Schema.AccessMode.READ_ONLY)
+    CredencialesGeneradasDTO credenciales
+) {
+    public MedicoDTO(Long idMedico, String noColegiado, String nombre, String apellidoPaterno, String apellidoMaterno, String telefono, String email, Boolean estado) {
+        this(idMedico, noColegiado, nombre, apellidoPaterno, apellidoMaterno, telefono, email, estado, null);
+    }
+}

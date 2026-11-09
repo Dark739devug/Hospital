@@ -4,9 +4,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import com.example.hospital.auth.dto.CambiarPasswordRequest;
 import com.example.hospital.auth.dto.LoginRequest;
 import com.example.hospital.auth.dto.LoginResponse;
 import com.example.hospital.auth.dto.RegisterRequest;
+import com.example.hospital.usuarios.Usuarios;
+import com.example.hospital.usuarios.UsuariosRepository;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,9 +27,11 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final UsuariosRepository usuariosRepository;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, UsuariosRepository usuariosRepository) {
         this.authService = authService;
+        this.usuariosRepository = usuariosRepository;
     }
 
     @PostMapping("/login")
@@ -57,6 +62,21 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(cuerpo);
     }
 
+    @PostMapping("/cambiar-password")
+    @Operation(summary = "Cambiar contraseña del usuario actual", description = "Permite al usuario autenticado cambiar su contraseña ingresando la actual y la nueva. Al cambiarla, si era temporal, deja de serlo y se elimina la fecha de vencimiento.\n\nAcceso: cualquier usuario autenticado.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Contraseña cambiada exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos (la contraseña debe tener al menos 8 caracteres)"),
+            @ApiResponse(responseCode = "401", description = "Token ausente o inválido"),
+            @ApiResponse(responseCode = "422", description = "La contraseña actual es incorrecta o igual a la anterior")
+    })
+    public ResponseEntity<Map<String, String>> cambiarPassword(
+            @Valid @RequestBody CambiarPasswordRequest request,
+            Authentication authentication) {
+        authService.cambiarPassword(authentication.getName(), request.passwordActual(), request.nuevaPassword());
+        return ResponseEntity.ok(Map.of("message", "Contraseña cambiada exitosamente."));
+    }
+
     @GetMapping("/me")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Nombre de usuario y roles del token"),
@@ -67,9 +87,16 @@ public class AuthController {
         List<String> roles = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .toList();
-        return ResponseEntity.ok(Map.of(
-                "username", authentication.getName(),
-                "roles", roles
-        ));
+
+        Usuarios usuario = usuariosRepository.findByNombreUsuario(authentication.getName()).orElse(null);
+        boolean debeCambiar = usuario != null && Boolean.TRUE.equals(usuario.getDebeCambiarPassword());
+        java.time.LocalDateTime expiracion = usuario != null ? usuario.getFechaExpiracionPassword() : null;
+
+        Map<String, Object> resp = new java.util.LinkedHashMap<>();
+        resp.put("username", authentication.getName());
+        resp.put("roles", roles);
+        resp.put("debeCambiarPassword", debeCambiar);
+        resp.put("fechaExpiracionPassword", expiracion);
+        return ResponseEntity.ok(resp);
     }
 }
