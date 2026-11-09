@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { listarTiposDiagnostico } from '../../api/catalogos.js'
 import { listarCitas } from '../../api/citas.js'
-import { actualizarConsulta, asociarDiagnostico, crearConsulta, listarConsultas, obtenerConsulta } from '../../api/consultas.js'
+import { actualizarConsulta, agregarMedicamentoConsulta, asociarDiagnostico, crearConsulta, listarConsultas, obtenerConsulta } from '../../api/consultas.js'
+import { listarMedicamentos } from '../../api/medicamentos.js'
 import { crearDiagnostico } from '../../api/diagnosticos.js'
 import { crearTratamiento } from '../../api/tratamientos.js'
 import { useAuth } from '../../auth/useAuth.js'
@@ -13,7 +14,7 @@ import { puede } from '../../config/menu.js'
 import { useApi } from '../../hooks/useApi.js'
 import { useDatosCita } from '../../hooks/useDatosCita.js'
 import { normalizarError } from '../../utils/errores.js'
-import { formatearFecha, formatearHora, hoyISO } from '../../utils/formato.js'
+import { formatearFecha, formatearHora, formatearMoneda, hoyISO } from '../../utils/formato.js'
 import { nombreMedico, nombrePaciente } from '../citas/utilsCita.js'
 import { FORM_DIAGNOSTICO_VACIO, formularioADiagnostico, validarDiagnostico } from '../diagnosticos/utilsDiagnostico.js'
 import { FORM_TRATAMIENTO_VACIO, formularioATratamiento, validarTratamiento } from '../tratamientos/utilsTratamiento.js'
@@ -40,15 +41,17 @@ export default function ConsultaForm() {
   const datosCita = useDatosCita()
   // Diagnóstico y tratamiento en el mismo registro: requieren poder crear ambos (ADMIN y MEDICO)
   const puedeRegistrarClinico = puede(rol, 'diagnosticos', 'crear') && puede(rol, 'tratamientos', 'crear')
+  const puedeAgregarMedicamento = puede(rol, 'consultas', 'agregarMedicamento')
 
   const { datos, error: errorCarga, cargando } = useApi(`consulta-form|${id ?? 'nueva'}`, async () => {
-    const [consulta, citas, consultas, tipos] = await Promise.all([
+    const [consulta, citas, consultas, tipos, medicamentos] = await Promise.all([
       esEdicion ? obtenerConsulta(id) : null,
       listarCitas(),
       listarConsultas(),
       esEdicion ? [] : listarTiposDiagnostico().catch(() => []),
+      !esEdicion && puedeAgregarMedicamento ? listarMedicamentos({ soloActivos: true }).catch(() => []) : [],
     ])
-    return { consulta, citas, consultas, tipos }
+    return { consulta, citas, consultas, tipos, medicamentos }
   })
 
   const [cambios, setCambios] = useState({})
@@ -56,6 +59,9 @@ export default function ConsultaForm() {
   const [tratamiento, setTratamiento] = useState(FORM_TRATAMIENTO_VACIO)
   const [conDiagnostico, setConDiagnostico] = useState(false)
   const [conTratamiento, setConTratamiento] = useState(false)
+  // Medicamentos del tratamiento: [{ idMedicamento, cantidad }]; se cobran en la factura de la consulta
+  const [recetados, setRecetados] = useState([])
+  const [nuevoMedicamento, setNuevoMedicamento] = useState({ idMedicamento: '', cantidad: '1' })
   const [errores, setErrores] = useState({})
   const [errorGeneral, setErrorGeneral] = useState('')
   const [guardando, setGuardando] = useState(false)
@@ -78,7 +84,8 @@ export default function ConsultaForm() {
     )
   }
 
-  const { consulta, citas, consultas, tipos } = datos
+  const { consulta, citas, consultas, tipos, medicamentos } = datos
+  const medicamentoPorId = (idMed) => medicamentos.find((m) => m.idMedicamento === idMed)
 
   // Consultas pasadas: solo lectura (24 horas desde la atención). El backend también lo rechaza.
   if (esEdicion && !consultaEditable(consulta)) {
@@ -178,9 +185,18 @@ export default function ConsultaForm() {
             await asociarDiagnostico(idDiagnostico, idConsulta)
             if (conTratamiento) {
               paso = 'registrar el tratamiento'
-              await crearTratamiento(formularioATratamiento({ ...tratamiento, idDiagnostico: String(idDiagnostico) }))
+              const { idTratamiento } = await crearTratamiento(formularioATratamiento({ ...tratamiento, idDiagnostico: String(idDiagnostico) }))
+              // Cada medicamento se asigna al tratamiento y se suma a la factura de la consulta
+              for (const r of recetados) {
+                paso = `agregar ${medicamentoPorId(r.idMedicamento)?.nombreComercial ?? 'el medicamento'}`
+                await agregarMedicamentoConsulta(idConsulta, { idTratamiento, idMedicamento: r.idMedicamento, cantidad: r.cantidad })
+              }
             }
-            mensaje = conTratamiento ? 'Consulta registrada con su diagnóstico y tratamiento.' : 'Consulta registrada con su diagnóstico.'
+            mensaje = !conTratamiento
+              ? 'Consulta registrada con su diagnóstico.'
+              : recetados.length
+                ? 'Consulta registrada con su diagnóstico, tratamiento y medicamentos (sumados a la factura de la consulta).'
+                : 'Consulta registrada con su diagnóstico y tratamiento.'
           } catch (err) {
             navigate(`/consultas/${idConsulta}`, {
               replace: true,
@@ -405,6 +421,83 @@ export default function ConsultaForm() {
                   onChange={cambiarTratamiento}
                   error={errores['tratamiento.indicaciones']}
                 />
+                {puedeAgregarMedicamento && (
+                  <div className="col-12">
+                    <label className="d-block font-weight-bold small mb-1">Medicamentos</label>
+                    {recetados.length === 0 ? (
+                      <p className="text-muted small mb-2">Opcional. Se cobran en la factura de la consulta.</p>
+                    ) : (
+                      <ul className="lista-divisoria mb-2">
+                        {recetados.map((r) => {
+                          const m = medicamentoPorId(r.idMedicamento)
+                          return (
+                            <li key={r.idMedicamento} className="d-flex justify-content-between align-items-center small">
+                              <span>
+                                {m?.nombreComercial}
+                                {m?.presentacion ? ` (${m.presentacion})` : ''} × {r.cantidad}
+                              </span>
+                              <span className="d-flex align-items-center acciones-grupo">
+                                <span className="text-muted">{formatearMoneda(Number(m?.precio ?? 0) * r.cantidad)}</span>
+                                <button
+                                  type="button"
+                                  className="btn btn-link text-danger p-0"
+                                  onClick={() => setRecetados((lista) => lista.filter((x) => x.idMedicamento !== r.idMedicamento))}
+                                >
+                                  Quitar
+                                </button>
+                              </span>
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    )}
+                    <div className="d-flex flex-wrap align-items-center acciones-grupo mb-3">
+                      <select
+                        aria-label="Medicamento"
+                        className="form-control form-control-sm w-auto"
+                        value={nuevoMedicamento.idMedicamento}
+                        onChange={(e) => setNuevoMedicamento((n) => ({ ...n, idMedicamento: e.target.value }))}
+                      >
+                        <option value="">Agregar medicamento...</option>
+                        {medicamentos
+                          .filter((m) => !recetados.some((r) => r.idMedicamento === m.idMedicamento))
+                          .map((m) => (
+                            <option key={m.idMedicamento} value={m.idMedicamento} disabled={m.stock <= 0}>
+                              {m.nombreComercial}
+                              {m.presentacion ? ` (${m.presentacion})` : ''} · {formatearMoneda(m.precio)}
+                              {m.stock <= 0 ? ' · sin stock' : ''}
+                            </option>
+                          ))}
+                      </select>
+                      <input
+                        aria-label="Cantidad"
+                        type="number"
+                        min="1"
+                        max="1000"
+                        step="1"
+                        className="form-control form-control-sm cantidad-medicamento"
+                        value={nuevoMedicamento.cantidad}
+                        onChange={(e) => setNuevoMedicamento((n) => ({ ...n, cantidad: e.target.value }))}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary btn-round btn-sm mb-0"
+                        disabled={
+                          !nuevoMedicamento.idMedicamento ||
+                          !Number.isInteger(Number(nuevoMedicamento.cantidad)) ||
+                          Number(nuevoMedicamento.cantidad) < 1 ||
+                          Number(nuevoMedicamento.cantidad) > 1000
+                        }
+                        onClick={() => {
+                          setRecetados((lista) => [...lista, { idMedicamento: Number(nuevoMedicamento.idMedicamento), cantidad: Number(nuevoMedicamento.cantidad) }])
+                          setNuevoMedicamento({ idMedicamento: '', cantidad: '1' })
+                        }}
+                      >
+                        Agregar
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -45,14 +45,13 @@ const CatalogosPagina = lazy(() => import('./pages/catalogos/CatalogosPagina.jsx
 const MedicoDetalle = lazy(() => import('./pages/personal/MedicoDetalle.jsx'))
 const MedicoForm = lazy(() => import('./pages/personal/MedicoForm.jsx'))
 const PersonalPagina = lazy(() => import('./pages/personal/PersonalPagina.jsx'))
+const ClinicasPagina = lazy(() => import('./pages/personal/ClinicasPagina.jsx'))
 const UsuariosPagina = lazy(() => import('./pages/usuarios/UsuariosPagina.jsx'))
 const EmergenciaDetalle = lazy(() => import('./pages/emergencias/EmergenciaDetalle.jsx'))
 const EmergenciaForm = lazy(() => import('./pages/emergencias/EmergenciaForm.jsx'))
 const EmergenciasLista = lazy(() => import('./pages/emergencias/EmergenciasLista.jsx'))
 const ProcedimientoForm = lazy(() => import('./pages/procedimientos/ProcedimientoForm.jsx'))
 const ProcedimientosLista = lazy(() => import('./pages/procedimientos/ProcedimientosLista.jsx'))
-const TriajeForm = lazy(() => import('./pages/triaje/TriajeForm.jsx'))
-const TriajeLista = lazy(() => import('./pages/triaje/TriajeLista.jsx'))
 const PacienteDetalle = lazy(() => import('./pages/pacientes/PacienteDetalle.jsx'))
 const PacienteForm = lazy(() => import('./pages/pacientes/PacienteForm.jsx'))
 const PacientesLista = lazy(() => import('./pages/pacientes/PacientesLista.jsx'))
@@ -63,7 +62,6 @@ const permisosMedicamentos = obtenerModulo('medicamentos').permisos
 const permisosRecetas = obtenerModulo('recetas').permisos
 const permisosHospitalizaciones = obtenerModulo('hospitalizaciones').permisos
 const permisosHabitaciones = obtenerModulo('habitaciones').permisos
-const permisosTriaje = obtenerModulo('triaje').permisos
 const permisosProcedimientos = obtenerModulo('procedimientos').permisos
 const permisosCitas = obtenerModulo('citas').permisos
 const permisosAgenda = obtenerModulo('agenda').permisos
@@ -74,6 +72,7 @@ const permisosFacturas = obtenerModulo('facturas').permisos
 const permisosCuentas = obtenerModulo('cuentas').permisos
 const permisosPagos = obtenerModulo('pagos').permisos
 const permisosPersonal = obtenerModulo('personal').permisos
+const permisosClinicas = obtenerModulo('clinicas').permisos
 const permisosCatalogos = obtenerModulo('catalogos').permisos
 const permisosUsuarios = obtenerModulo('usuarios').permisos
 
@@ -162,15 +161,8 @@ export default function App() {
             <Route path="/emergencia/:id/editar" element={<EmergenciaForm />} />
           </Route>
 
-          <Route element={<RoleRoute roles={permisosTriaje.ver} />}>
-            <Route path="/triaje" element={<TriajeLista />} />
-          </Route>
-          <Route element={<RoleRoute roles={permisosTriaje.crear} />}>
-            <Route path="/triaje/nuevo" element={<TriajeForm />} />
-          </Route>
-          <Route element={<RoleRoute roles={permisosTriaje.editar} />}>
-            <Route path="/triaje/:id/editar" element={<TriajeForm />} />
-          </Route>
+          {/* Los niveles de triaje se gestionan en Catálogos; se conserva la ruta antigua */}
+          <Route path="/triaje/*" element={<Navigate to="/catalogos?tab=niveles-triaje" replace />} />
 
           <Route element={<RoleRoute roles={permisosProcedimientos.ver} />}>
             <Route path="/procedimientos" element={<ProcedimientosLista />} />
@@ -247,6 +239,9 @@ export default function App() {
 
           <Route element={<RoleRoute roles={permisosPersonal.ver} />}>
             <Route path="/personal" element={<PersonalPagina />} />
+          </Route>
+          <Route element={<RoleRoute roles={permisosClinicas.ver} />}>
+            <Route path="/clinicas" element={<ClinicasPagina />} />
             <Route path="/personal/medicos/:id" element={<MedicoDetalle />} />
           </Route>
           <Route element={<RoleRoute roles={permisosPersonal.crear} />}>

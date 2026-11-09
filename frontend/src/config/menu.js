@@ -78,6 +78,8 @@ export const MODULOS = [
       desactivar: SOLO_ADMIN,
       // /api/diagnostico-consulta: asociar y quitar diagnósticos de una consulta
       asociarDiagnostico: [ADMIN, MEDICO],
+      // POST/DELETE /api/consultas/{id}/medicamentos: recetar y cobrar en la factura de la consulta
+      agregarMedicamento: [ADMIN, MEDICO],
     },
   },
   {
@@ -107,20 +109,6 @@ export const MODULOS = [
     icono: 'health_ambulance',
     titulo: 'Emergencia',
     ruta: '/emergencia',
-    grupo: 'Atención',
-    implementado: true,
-    permisos: {
-      ver: CLINICOS,
-      crear: [ADMIN, MEDICO, ENFERMERO],
-      editar: [ADMIN, MEDICO, ENFERMERO],
-      desactivar: SOLO_ADMIN,
-    },
-  },
-  {
-    clave: 'triaje',
-    icono: 'ui-1_bell-53',
-    titulo: 'Niveles de triaje',
-    ruta: '/triaje',
     grupo: 'Atención',
     implementado: true,
     permisos: {
@@ -265,6 +253,16 @@ export const MODULOS = [
     permisos: { ver: CLINICOS, crear: SOLO_ADMIN, editar: SOLO_ADMIN, desactivar: SOLO_ADMIN },
   },
   {
+    clave: 'clinicas',
+    icono: 'location_pin',
+    titulo: 'Clínicas',
+    ruta: '/clinicas',
+    grupo: 'Administración',
+    implementado: true,
+    // /api/clinicas, departamentos y especialidades: lectura abierta; escritura solo ADMIN (`escribir` en config/catalogos.js)
+    permisos: { ver: CLINICOS, crear: SOLO_ADMIN, editar: SOLO_ADMIN, desactivar: SOLO_ADMIN },
+  },
+  {
     clave: 'catalogos',
     icono: 'design_bullet-list-67',
     titulo: 'Catálogos',
@@ -272,9 +270,9 @@ export const MODULOS = [
     grupo: 'Administración',
     implementado: true,
     // Catálogos (tipos, estados, niveles de urgencia, métodos de pago): lectura casi abierta, escritura ADMIN.
-    // Alergias: escritura ADMIN/MEDICO (desactivar solo ADMIN). La pantalla ofrece a cada rol solo los catálogos que puede
-    // modificar (ver `escribir` en config/catalogos.js); por eso `ver` es ADMIN y MEDICO.
-    permisos: { ver: [ADMIN, MEDICO], crear: SOLO_ADMIN, editar: SOLO_ADMIN, desactivar: SOLO_ADMIN },
+    // Alergias: escritura ADMIN/MEDICO; niveles de triaje: ADMIN/MEDICO/ENFERMERO (desactivar solo ADMIN). La pantalla ofrece
+    // a cada rol solo los catálogos que puede modificar (ver `escribir` en config/catalogos.js); por eso `ver` incluye a ENFERMERO.
+    permisos: { ver: [ADMIN, MEDICO, ENFERMERO], crear: SOLO_ADMIN, editar: SOLO_ADMIN, desactivar: SOLO_ADMIN },
   },
   {
     clave: 'usuarios',
