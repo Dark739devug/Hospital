@@ -54,7 +54,7 @@ export default function HospitalizacionForm() {
   }
 
   const { original, activas } = carga
-  const iniciales = original ? hospitalizacionAFormulario(original) : { ...FORM_HOSP_VACIO, idPaciente: params.get('idPaciente') ?? '' }
+  const iniciales = original ? hospitalizacionAFormulario(original) : { ...FORM_HOSP_VACIO, idPaciente: params.get('idPaciente') ?? '', idHabitacion: params.get('idHabitacion') ?? '' }
   const form = { ...iniciales, ...cambios }
 
   const cambiar = (e) => {

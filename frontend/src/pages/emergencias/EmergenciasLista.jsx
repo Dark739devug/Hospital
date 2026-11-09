@@ -13,6 +13,7 @@ import { useApi } from '../../hooks/useApi.js'
 import { useDatosEmergencia } from '../../hooks/useDatosEmergencia.js'
 import { acortar, formatearFechaHora } from '../../utils/formato.js'
 import { nombreMedico, nombrePaciente } from '../citas/utilsCita.js'
+import { EmergenciasActividad, EmergenciasIndicadores } from './EmergenciasResumen.jsx'
 import { estadoEmergencia, etiquetaPacienteEmergencia } from './utilsEmergencia.js'
 
 const TAMANO_PAGINA = 10
@@ -77,6 +78,8 @@ export default function EmergenciasLista() {
       ),
     },
     { clave: 'motivo', titulo: 'Motivo', render: (e) => acortar(e.motivo, 45) },
+    { clave: 'signos', titulo: 'Signos vitales', render: (e) => (e.signosVitales ? <span className="small">{acortar(e.signosVitales, 40)}</span> : '—') },
+    { clave: 'habitacion', titulo: 'Habitación', render: (e) => (e.idHabitacion ? (datos.habitacionesPorId[e.idHabitacion]?.numero ?? `#${e.idHabitacion}`) : '—') },
     { clave: 'triaje', titulo: 'Triaje', render: (e) => <TriajeBadge triaje={datos.triajesPorId[e.idTriaje]} niveles={datos.niveles} fallback={`#${e.idTriaje}`} /> },
     { clave: 'medico', titulo: 'Médico', render: (e) => (e.idMedico ? nombreMedico(datos.medicosPorId[e.idMedico], e.idMedico) : '—') },
     {
@@ -111,7 +114,7 @@ export default function EmergenciasLista() {
       <div className="card card-body d-flex flex-column flex-md-row align-items-md-center justify-content-md-between">
         <div>
           <h1 className="h3 mb-0">Emergencias</h1>
-          <p className="text-muted mb-0">Ingresos y atención en el área de emergencias.</p>
+          <p className="text-muted mb-0">Ingresos, clasificación por triaje y atención en el área de emergencias.</p>
         </div>
         {puedeCrear && (
           <Link
@@ -126,6 +129,17 @@ export default function EmergenciasLista() {
       <ErrorAlert tipo="exito" mensaje={exito} onCerrar={() => setExito('')} />
       <ErrorAlert mensaje={error?.message} />
 
+      <EmergenciasIndicadores
+        datos={datos}
+        emergencias={lista}
+        idTriaje={idTriaje}
+        onFiltrarTriaje={(id) => {
+          setIdTriaje(id)
+          setPagina(1)
+        }}
+      />
+
+      <h2 className="h5 mb-3">Pacientes en emergencia</h2>
       <Table
         columnas={columnas}
         filas={filas.slice((pagina - 1) * TAMANO_PAGINA, pagina * TAMANO_PAGINA)}
@@ -187,6 +201,8 @@ export default function EmergenciasLista() {
         vacio={<EmptyState titulo="No hay ingresos" descripcion="Ajuste los filtros o registre un ingreso a emergencia." />}
         pie={<Pagination pagina={pagina} totalElementos={filas.length} tamano={TAMANO_PAGINA} onCambiarPagina={setPagina} />}
       />
+
+      <EmergenciasActividad datos={datos} emergencias={lista} />
     </div>
   )
 }
