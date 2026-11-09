@@ -51,7 +51,7 @@ export default function FacturasLista() {
     () => listarFacturas(filtrosServidor),
   )
 
-  // Nombres de los pacientes de las facturas listadas (GET /api/v1/paciente/{id}/resumen, también permitido a CAJERO)
+  // Nombres de los pacientes de las facturas listadas (GET /api/paciente/{id}/resumen, también permitido a CAJERO)
   const datos = useDatosFacturacion((facturas ?? []).map((f) => f.idPaciente))
 
   useEffect(() => {

@@ -38,11 +38,16 @@ export default function PacienteDetalle() {
 
   useEffect(() => {
     let cancelado = false
-    setCargando(true)
-    setError(null)
-    obtenerPaciente(id)
+    // El estado se reinicia dentro de la promesa y no de forma síncrona en el efecto (igual que useApi).
+    Promise.resolve()
+      .then(() => {
+        if (cancelado) return null
+        setCargando(true)
+        setError(null)
+        return obtenerPaciente(id)
+      })
       .then(async (p) => {
-        if (cancelado) return
+        if (cancelado || !p) return
         setPaciente(p)
         // Los catálogos solo sirven para mostrar nombres; si fallan, se muestra el ID.
         const [alergias, tipos] = await Promise.allSettled([listarAlergias(), listarTiposSangre()])

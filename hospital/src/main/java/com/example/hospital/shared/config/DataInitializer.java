@@ -29,7 +29,7 @@ public class DataInitializer implements CommandLineRunner {
     @Value("${app.admin.username:admin}")
     private String adminUsername;
 
-    @Value("${app.admin.password:Admin123*}")
+    @Value("${app.admin.password}")
     private String adminPassword;
 
     @Override
@@ -45,11 +45,13 @@ public class DataInitializer implements CommandLineRunner {
             }
         }
 
-        // 2. Crear o actualizar usuario administrador inicial
+        // 2. Crear el usuario administrador inicial (solo la primera vez)
         Optional<Usuarios> adminOpt = usuariosRepository.findByNombreUsuario(adminUsername);
         Rol adminRol = rolRepository.findByNombre("ADMIN").orElseThrow(
                 () -> new IllegalStateException("El rol ADMIN no pudo ser encontrado"));
 
+        // Si el administrador ya existe no se toca: su contraseña se cambia desde la aplicación
+        // y no debe volver al valor de ADMIN_PASSWORD en cada reinicio.
         if (adminOpt.isEmpty()) {
             Usuarios admin = new Usuarios();
             admin.setNombreUsuario(adminUsername);
@@ -59,16 +61,6 @@ public class DataInitializer implements CommandLineRunner {
             admin.setIdRol(adminRol.getIdRol());
             usuariosRepository.save(admin);
             System.out.println(">>> Usuario administrador inicial creado: " + adminUsername);
-        } else {
-            Usuarios admin = adminOpt.get();
-            if (!passwordEncoder.matches(adminPassword, admin.getContrasenaHash())) {
-                admin.setContrasenaHash(passwordEncoder.encode(adminPassword));
-                admin.setEstado(true);
-                admin.setIdRol(adminRol.getIdRol());
-                usuariosRepository.save(admin);
-                System.out.println(
-                        ">>> Contraseña de administrador sincronizada con application.properties: " + adminUsername);
-            }
         }
     }
 }

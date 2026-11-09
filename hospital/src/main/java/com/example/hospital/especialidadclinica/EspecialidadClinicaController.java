@@ -1,5 +1,6 @@
 package com.example.hospital.especialidadclinica;
 
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -29,8 +30,12 @@ public class EspecialidadClinicaController {
     }
 
     @GetMapping
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Consulta exitosa"),
+            @ApiResponse(responseCode = "400", description = "Algún parámetro de la ruta o de la consulta tiene un formato inválido (por ejemplo un id no numérico o una fecha mal escrita)")
+    })
     @Operation(summary = "Listar especialidades de clínica", description = "Devuelve las especialidades por clínica. Con `soloActivas=true` solo las activas.\n\nAcceso: cualquier usuario autenticado.")
-    public List<EspecialidadClinicaDTO> findAll(@RequestParam(required = false, defaultValue = "false") boolean soloActivas) {
+    public List<EspecialidadClinicaDTO> findAll(@Parameter(description = "Si es true devuelve solo los registros activos; por defecto false (todos).", example = "true") @RequestParam(required = false, defaultValue = "false") boolean soloActivas) {
         if (soloActivas) {
             return especialidadClinicaService.findActivas();
         }
@@ -38,13 +43,24 @@ public class EspecialidadClinicaController {
     }
 
     @GetMapping("/{id}")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Consulta exitosa"),
+            @ApiResponse(responseCode = "400", description = "Algún parámetro de la ruta o de la consulta tiene un formato inválido (por ejemplo un id no numérico o una fecha mal escrita)"),
+            @ApiResponse(responseCode = "404", description = "No existe la especialidad clínica indicada")
+    })
     @Operation(summary = "Obtener especialidad de clínica por ID", description = "Devuelve el detalle de una especialidad de clínica.\n\nAcceso: cualquier usuario autenticado.")
-    public EspecialidadClinicaDTO findById(@PathVariable Long id) {
+    public EspecialidadClinicaDTO findById(@Parameter(description = "Id del registro en «Especialidad de clínica» (debe existir).", example = "1") @PathVariable Long id) {
         return especialidadClinicaService.findById(id);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Creado correctamente"),
+            @ApiResponse(responseCode = "400", description = "Datos del cuerpo inválidos: ver `detalles` con el mensaje de cada campo"),
+            @ApiResponse(responseCode = "409", description = "Ya existe una especialidad clínica con el nombre"),
+            @ApiResponse(responseCode = "422", description = "El nombre de la especialidad clínica es obligatorio")
+    })
     @Operation(summary = "Registrar especialidad de clínica", description = "Crea una nueva especialidad para una clínica.\n\nRoles permitidos: ADMIN.")
     public ResponseEntity<EspecialidadClinicaDTO> save(@Valid @RequestBody EspecialidadClinicaDTO dto) {
         EspecialidadClinicaDTO creada = especialidadClinicaService.crear(dto);
@@ -53,9 +69,16 @@ public class EspecialidadClinicaController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Actualizado correctamente"),
+            @ApiResponse(responseCode = "400", description = "Datos del cuerpo inválidos: ver `detalles` con el mensaje de cada campo; Algún parámetro de la ruta o de la consulta tiene un formato inválido (por ejemplo un id no numérico o una fecha mal escrita)"),
+            @ApiResponse(responseCode = "404", description = "No existe la especialidad clínica indicada"),
+            @ApiResponse(responseCode = "409", description = "Ya existe una especialidad clínica con el nombre"),
+            @ApiResponse(responseCode = "422", description = "El nombre de la especialidad clínica es obligatorio")
+    })
     @Operation(summary = "Actualizar especialidad de clínica", description = "Modifica una especialidad de clínica.\n\nRoles permitidos: ADMIN.")
     public ResponseEntity<EspecialidadClinicaDTO> update(
-            @PathVariable Long id,
+            @Parameter(description = "Id del registro en «Especialidad de clínica» (debe existir).", example = "1") @PathVariable Long id,
             @Valid @RequestBody EspecialidadClinicaDTO dto) {
         EspecialidadClinicaDTO actualizada = especialidadClinicaService.actualizar(dto, id);
         return ResponseEntity.ok(actualizada);
@@ -63,8 +86,15 @@ public class EspecialidadClinicaController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Operación realizada sin contenido en la respuesta"),
+            @ApiResponse(responseCode = "400", description = "Algún parámetro de la ruta o de la consulta tiene un formato inválido (por ejemplo un id no numérico o una fecha mal escrita)"),
+            @ApiResponse(responseCode = "404", description = "No existe la especialidad clínica indicada"),
+            @ApiResponse(responseCode = "409", description = "No se puede eliminar la especialidad porque la usan clínicas activas"),
+            @ApiResponse(responseCode = "422", description = "Regla de negocio incumplida")
+    })
     @Operation(summary = "Eliminar especialidad de clínica", description = "Desactiva una especialidad de clínica.\n\nRoles permitidos: ADMIN.")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@Parameter(description = "Id del registro en «Especialidad de clínica» (debe existir).", example = "1") @PathVariable Long id) {
         especialidadClinicaService.eliminar(id);
         return ResponseEntity.noContent().build();
     }

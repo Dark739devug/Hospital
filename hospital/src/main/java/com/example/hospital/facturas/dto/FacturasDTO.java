@@ -7,9 +7,12 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public record FacturasDTO(
+    @Schema(description = "Identificador del registro. Lo genera el servidor: no se envía al crear (se ignora).", example = "1")
     Long idFactura,
+    @Schema(description = "Id del paciente (debe existir y estar activo).", example = "1")
     @NotNull(message = "El paciente es obligatorio")
     Long idPaciente,
+    @Schema(description = "Id de la hospitalización.", example = "1")
     Long idHospitalizacion,
     @Schema(description = "Solo lectura: la asigna el servidor al emitir (hora actual); el cliente no la puede fijar ni cambiar.",
             accessMode = Schema.AccessMode.READ_ONLY)
@@ -22,6 +25,7 @@ public record FacturasDTO(
     BigDecimal iva,
     @Schema(description = "Solo lectura: subtotal + IVA.", accessMode = Schema.AccessMode.READ_ONLY)
     BigDecimal total,
+    @Schema(description = "Id del método de pago (1 = Efectivo, 2 = Tarjeta, 3 = Transferencia, 4 = Seguro).", example = "1")
     @NotNull(message = "El método de pago es obligatorio")
     Long idMetodoPago,
     @Schema(description = "Solo lectura: la factura nace Pendiente; el estado cambia solo con `PATCH /{id}/estado/{idEstado}` "

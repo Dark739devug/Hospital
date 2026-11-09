@@ -5,12 +5,12 @@ import { useApi } from '../hooks/useApi.js'
 const MINIMO = 2
 
 /**
- * Selector de paciente con búsqueda (combobox accesible) contra GET /api/v1/paciente/busqueda, que devuelve solo
+ * Selector de paciente con búsqueda (combobox accesible) contra GET /api/paciente/busqueda, que devuelve solo
  * id, nombre completo y DPI de pacientes activos (lo pueden usar ADMIN, CAJERO y RECEPCIONISTA).
  * - Espera ~300 ms tras escribir y pide el servidor con al menos 2 caracteres.
  * - Teclado: flechas para moverse, Enter para elegir, Escape para cerrar.
  * - `valor` es el idPaciente (texto) y `onChange(idPaciente, resumen)` recibe '' al quitar la selección.
- *   El nombre del paciente ya elegido (p. ej. al editar) se precarga con GET /api/v1/paciente/{id}/resumen.
+ *   El nombre del paciente ya elegido (p. ej. al editar) se precarga con GET /api/paciente/{id}/resumen.
  * - `compacto` dibuja solo el control (sin etiqueta) para usarlo como filtro en las listas.
  */
 export default function PacienteSelector({

@@ -10,6 +10,7 @@ import com.example.hospital.medico.Medico;
 import com.example.hospital.medico.MedicoRepository;
 import com.example.hospital.medico.MedicoService;
 import com.example.hospital.medico.dto.MedicoDTO;
+import com.example.hospital.shared.exception.RecursoNoEncontradoException;
 import com.example.hospital.shared.exception.ReglaNegocioException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -77,7 +78,7 @@ public class MedicoServiceImpl implements MedicoService {
     @Transactional(readOnly = true)
     public MedicoDTO findById(Long id) {
         Medico entity = medicoRepository.findById(id)
-                .orElseThrow(() -> new ReglaNegocioException("No existe el médico con ID: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException("No existe el médico con ID: " + id));
         return mapToDTO(entity);
     }
 
@@ -88,7 +89,7 @@ public class MedicoServiceImpl implements MedicoService {
             throw new ReglaNegocioException("El número de colegiado es obligatorio.");
         }
         Medico entity = medicoRepository.findByNoColegiado(noColegiado.trim())
-                .orElseThrow(() -> new ReglaNegocioException("No se encontró el médico con número de colegiado: " + noColegiado));
+                .orElseThrow(() -> new RecursoNoEncontradoException("No se encontró el médico con número de colegiado: " + noColegiado));
         return mapToDTO(entity);
     }
 
@@ -149,7 +150,7 @@ public class MedicoServiceImpl implements MedicoService {
         }
 
         Medico existente = medicoRepository.findById(id)
-                .orElseThrow(() -> new ReglaNegocioException("No se encontró el médico con ID: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException("No se encontró el médico con ID: " + id));
 
         validarDatosMedico(dto, id);
 
@@ -183,7 +184,7 @@ public class MedicoServiceImpl implements MedicoService {
         }
 
         Medico existente = medicoRepository.findById(id)
-                .orElseThrow(() -> new ReglaNegocioException("No se encontró el médico con ID: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException("No se encontró el médico con ID: " + id));
 
         if (Boolean.FALSE.equals(nuevoEstado)) {
             validarCompromisosActivos(id);
@@ -202,7 +203,7 @@ public class MedicoServiceImpl implements MedicoService {
         }
 
         Medico existente = medicoRepository.findById(id)
-                .orElseThrow(() -> new ReglaNegocioException("No se encontró el médico con ID: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException("No se encontró el médico con ID: " + id));
 
         if (!Boolean.TRUE.equals(existente.getEstado())) {
             throw new ReglaNegocioException("El médico ya se encuentra inactivo.");

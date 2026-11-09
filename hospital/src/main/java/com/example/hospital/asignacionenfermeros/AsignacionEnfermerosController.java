@@ -1,5 +1,6 @@
 package com.example.hospital.asignacionenfermeros;
 
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -28,20 +29,36 @@ public class AsignacionEnfermerosController {
         this.asignacionEnfermerosService = asignacionEnfermerosService;
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'MEDICO', 'ENFERMERO', 'RECEPCIONISTA')")
     @GetMapping
-    @Operation(summary = "Listar asignaciones", description = "Devuelve todas las asignaciones de enfermeros a hospitalizaciones.\n\nAcceso: cualquier usuario autenticado.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Consulta exitosa")
+    })
+    @Operation(summary = "Listar asignaciones", description = "Devuelve todas las asignaciones de enfermeros a hospitalizaciones.\n\nRoles permitidos: ADMIN, MEDICO, ENFERMERO, RECEPCIONISTA.")
     public List<AsignacionEnfermerosDTO> findAll() {
         return asignacionEnfermerosService.findAll();
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'MEDICO', 'ENFERMERO', 'RECEPCIONISTA')")
     @GetMapping("/{id}")
-    @Operation(summary = "Obtener asignación por ID", description = "Devuelve el detalle de una asignación específica (enfermero, hospitalización, fecha y turno).\n\nAcceso: cualquier usuario autenticado.")
-    public AsignacionEnfermerosDTO findById(@PathVariable Long id) {
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Consulta exitosa"),
+            @ApiResponse(responseCode = "400", description = "Algún parámetro de la ruta o de la consulta tiene un formato inválido (por ejemplo un id no numérico o una fecha mal escrita)"),
+            @ApiResponse(responseCode = "404", description = "No existe la asignación indicada")
+    })
+    @Operation(summary = "Obtener asignación por ID", description = "Devuelve el detalle de una asignación específica (enfermero, hospitalización, fecha y turno).\n\nRoles permitidos: ADMIN, MEDICO, ENFERMERO, RECEPCIONISTA.")
+    public AsignacionEnfermerosDTO findById(@Parameter(description = "Id del registro en «Asignación de enfermeros» (debe existir).", example = "1") @PathVariable Long id) {
         return asignacionEnfermerosService.findById(id);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Creado correctamente"),
+            @ApiResponse(responseCode = "400", description = "Datos del cuerpo inválidos: ver `detalles` con el mensaje de cada campo"),
+            @ApiResponse(responseCode = "409", description = "Ya existe una asignación idéntica para este enfermero en la misma hospitalización, fecha y turno"),
+            @ApiResponse(responseCode = "422", description = "El enfermero indicado no existe; El enfermero no se encuentra activo; La hospitalización indicada no existe; La hospitalización no se encuentra en estado Activa; El turno indicado no existe")
+    })
     @Operation(summary = "Asignar enfermero", description = "Asigna un enfermero a una hospitalización activa en una fecha y turno. No permite asignaciones duplicadas (mismo enfermero, hospitalización, fecha y turno).\n\nRoles permitidos: ADMIN.")
     public ResponseEntity<AsignacionEnfermerosDTO> save(@Valid @RequestBody AsignacionEnfermerosDTO dto) {
         AsignacionEnfermerosDTO creado = asignacionEnfermerosService.crear(dto);
@@ -50,9 +67,16 @@ public class AsignacionEnfermerosController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Actualizado correctamente"),
+            @ApiResponse(responseCode = "400", description = "Datos del cuerpo inválidos: ver `detalles` con el mensaje de cada campo; Algún parámetro de la ruta o de la consulta tiene un formato inválido (por ejemplo un id no numérico o una fecha mal escrita)"),
+            @ApiResponse(responseCode = "404", description = "No existe la asignación indicada"),
+            @ApiResponse(responseCode = "409", description = "Ya existe una asignación idéntica para este enfermero en la misma hospitalización, fecha y turno"),
+            @ApiResponse(responseCode = "422", description = "El enfermero indicado no existe; El enfermero no se encuentra activo; La hospitalización indicada no existe; La hospitalización no se encuentra en estado Activa; El turno indicado no existe")
+    })
     @Operation(summary = "Actualizar asignación", description = "Modifica el enfermero, la fecha o el turno de una asignación existente.\n\nRoles permitidos: ADMIN.")
     public ResponseEntity<AsignacionEnfermerosDTO> update(
-            @PathVariable Long id,
+            @Parameter(description = "Id del registro en «Asignación de enfermeros» (debe existir).", example = "1") @PathVariable Long id,
             @Valid @RequestBody AsignacionEnfermerosDTO dto) {
         AsignacionEnfermerosDTO actualizado = asignacionEnfermerosService.actualizar(dto, id);
         return ResponseEntity.ok(actualizado);
@@ -60,23 +84,41 @@ public class AsignacionEnfermerosController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Operación realizada sin contenido en la respuesta"),
+            @ApiResponse(responseCode = "400", description = "Algún parámetro de la ruta o de la consulta tiene un formato inválido (por ejemplo un id no numérico o una fecha mal escrita)"),
+            @ApiResponse(responseCode = "404", description = "No existe la asignación indicada"),
+            @ApiResponse(responseCode = "422", description = "Regla de negocio incumplida")
+    })
     @Operation(summary = "Eliminar asignación", description = "Elimina/desactiva una asignación de enfermero.\n\nRoles permitidos: ADMIN.")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@Parameter(description = "Id del registro en «Asignación de enfermeros» (debe existir).", example = "1") @PathVariable Long id) {
         asignacionEnfermerosService.eliminar(id);
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'MEDICO', 'ENFERMERO', 'RECEPCIONISTA')")
     @GetMapping("/enfermero/{idEnfermero}")
-    @Operation(summary = "Asignaciones de un enfermero", description = "**Nuevo.** Devuelve todas las asignaciones de un enfermero; sirve para ver su carga de trabajo o su calendario de turnos. Responde 404 si el enfermero no existe.\n\nAcceso: cualquier usuario autenticado.")
-    public List<AsignacionEnfermerosDTO> findByEnfermero(@PathVariable Long idEnfermero) {
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Consulta exitosa"),
+            @ApiResponse(responseCode = "400", description = "Algún parámetro de la ruta o de la consulta tiene un formato inválido (por ejemplo un id no numérico o una fecha mal escrita)"),
+            @ApiResponse(responseCode = "404", description = "No existe el enfermero indicado")
+    })
+    @Operation(summary = "Asignaciones de un enfermero", description = "Devuelve todas las asignaciones de un enfermero; sirve para ver su carga de trabajo o su calendario de turnos. Responde 404 si el enfermero no existe.\n\nRoles permitidos: ADMIN, MEDICO, ENFERMERO, RECEPCIONISTA.")
+    public List<AsignacionEnfermerosDTO> findByEnfermero(@Parameter(description = "Id del enfermero.", example = "1") @PathVariable Long idEnfermero) {
         return asignacionEnfermerosService.findByEnfermero(idEnfermero);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'MEDICO', 'ENFERMERO', 'RECEPCIONISTA')")
     @GetMapping("/hospitalizacion/{idHospitalizacion}")
-    @Operation(summary = "Enfermeros de una hospitalización", description = "**Nuevo.** Devuelve los enfermeros asignados a una hospitalización (quién atiende al paciente en cada turno). Responde 404 si la hospitalización no existe.\n\nAcceso: cualquier usuario autenticado.\n\nParámetro opcional `soloActivas` (por defecto `false`, igual que en los demás módulos): con `true` omite las asignaciones quitadas (borrado lógico).")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Consulta exitosa"),
+            @ApiResponse(responseCode = "400", description = "Algún parámetro de la ruta o de la consulta tiene un formato inválido (por ejemplo un id no numérico o una fecha mal escrita)"),
+            @ApiResponse(responseCode = "404", description = "No existe la hospitalización indicada")
+    })
+    @Operation(summary = "Enfermeros de una hospitalización", description = "Devuelve los enfermeros asignados a una hospitalización (quién atiende al paciente en cada turno). Responde 404 si la hospitalización no existe.\n\nRoles permitidos: ADMIN, MEDICO, ENFERMERO, RECEPCIONISTA.\n\nParámetro opcional `soloActivas` (por defecto `false`, igual que en los demás módulos): con `true` omite las asignaciones quitadas (borrado lógico).")
     public List<AsignacionEnfermerosDTO> findByHospitalizacion(
-            @PathVariable Long idHospitalizacion,
-            @RequestParam(required = false, defaultValue = "false") boolean soloActivas) {
+            @Parameter(description = "Id de la hospitalización.", example = "1") @PathVariable Long idHospitalizacion,
+            @Parameter(description = "Si es true devuelve solo los registros activos; por defecto false (todos).", example = "true") @RequestParam(required = false, defaultValue = "false") boolean soloActivas) {
         return asignacionEnfermerosService.findByHospitalizacion(idHospitalizacion, soloActivas);
     }
 }

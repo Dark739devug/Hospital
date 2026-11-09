@@ -1,0 +1,12 @@
+# Archivos que no se envian al build de Docker
+target/
+.idea/
+.vscode/
+*.iml
+.mvn/
+mvnw
+mvnw.cmd
+*.log
+.env
+.env.*
+Hosp_postgres.sql

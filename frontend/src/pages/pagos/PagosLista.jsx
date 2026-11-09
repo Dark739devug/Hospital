@@ -40,7 +40,7 @@ export default function PagosLista() {
     return { pagos, facturasPorId: mapaPor(facturas, 'idFactura') }
   })
 
-  // Nombre del paciente de cada pago (vía su factura) con GET /api/v1/paciente/{id}/resumen
+  // Nombre del paciente de cada pago (vía su factura) con GET /api/paciente/{id}/resumen
   const datos = useDatosFacturacion(Object.values(carga?.facturasPorId ?? {}).map((f) => f.idPaciente))
   const estadoCancelada = datos.idEstado('Cancelada')
 

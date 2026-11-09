@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 @Service
 public class TiposHabitacionServiceImpl implements TiposHabitacionService {
 
-    // Valores base de tipos de habitación (según Hosp.sql)
+    // Valores base de tipos de habitación (según Hosp_postgres.sql)
     public static final String INDIVIDUAL = "Individual";
     public static final String DOBLE = "Doble";
     public static final String COMPARTIDA = "Compartida";

@@ -1,9 +1,9 @@
 package com.example.hospital.paciente;
 
+import io.swagger.v3.oas.annotations.Parameter;
 import com.example.hospital.paciente.dto.PacienteRequest;
 import com.example.hospital.paciente.dto.PacienteResponse;
 import com.example.hospital.paciente.dto.PacienteResumenDTO;
-import com.example.hospital.shared.constants.ApiConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
-@RequestMapping(ApiConstants.API_V1 + "/paciente")
+@RequestMapping("/api/paciente")
 @RequiredArgsConstructor
 @Tag(name = "Pacientes", description = "Gestión de pacientes del hospital")
 @ApiResponses({
@@ -35,8 +35,8 @@ public class PacienteController {
     @Operation(summary = "Listar / buscar pacientes", description = "Devuelve los pacientes activos. Parámetros opcionales:\n- `q`: busca por nombre, apellido paterno, apellido materno o DPI (coincidencia parcial, sin distinguir mayúsculas)\n- `todos=true`: incluye también los pacientes inactivos (también cuando se usa junto con `q`)\n\nRoles permitidos: ADMIN, MEDICO, ENFERMERO, RECEPCIONISTA.")
     @ApiResponse(responseCode = "200", description = "Lista de pacientes")
     public List<PacienteResponse> listar(
-            @RequestParam(required = false, defaultValue = "false") boolean todos,
-            @RequestParam(required = false) String q) {
+            @Parameter(description = "Si es true incluye también a los pacientes inactivos; por defecto false.", example = "false") @RequestParam(required = false, defaultValue = "false") boolean todos,
+            @Parameter(description = "Texto a buscar (nombre, apellido o DPI).", example = "García") @RequestParam(required = false) String q) {
         if (q != null && !q.trim().isEmpty()) {
             return service.buscar(q, todos);
         }
@@ -51,8 +51,11 @@ public class PacienteController {
     // (Las rutas literales "/busqueda" y "/{id}/resumen" no chocan con "/{id}": Spring prefiere la coincidencia literal.)
     @GetMapping("/busqueda")
     @PreAuthorize("hasAnyRole('ADMIN','CAJERO','RECEPCIONISTA')")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Consulta exitosa")
+    })
     @Operation(summary = "Búsqueda mínima de pacientes (caja)", description = "Busca pacientes ACTIVOS por nombre, apellidos o DPI (parcial, sin distinguir mayúsculas) y devuelve solo `idPaciente`, `nombreCompleto`, `dpiPaciente` y `activo`. NO expone teléfono, correo, dirección ni datos clínicos. `q` con menos de 2 caracteres devuelve lista vacía (200). Máximo 20 resultados, ordenados por nombre.\n\nJustificación: mínimo privilegio; permite a CAJERO identificar al paciente en facturas y cuentas sin darle acceso al listado completo.\n\nRoles permitidos: ADMIN, CAJERO, RECEPCIONISTA.")
-    public List<PacienteResumenDTO> busqueda(@RequestParam(required = false) String q) {
+    public List<PacienteResumenDTO> busqueda(@Parameter(description = "Texto a buscar (nombre, apellido o DPI).", example = "García") @RequestParam(required = false) String q) {
         return service.buscarResumen(q);
     }
 
@@ -63,7 +66,7 @@ public class PacienteController {
             @ApiResponse(responseCode = "200", description = "Resumen del paciente"),
             @ApiResponse(responseCode = "404", description = "El paciente no existe")
     })
-    public PacienteResumenDTO resumen(@PathVariable Long id) {
+    public PacienteResumenDTO resumen(@Parameter(description = "Id del registro en «Pacientes» (debe existir).", example = "1") @PathVariable Long id) {
         return service.resumen(id);
     }
 
@@ -74,7 +77,7 @@ public class PacienteController {
             @ApiResponse(responseCode = "200", description = "Paciente encontrado"),
             @ApiResponse(responseCode = "404", description = "El paciente no existe")
     })
-    public PacienteResponse obtenerPorDpi(@PathVariable String dpi) {
+    public PacienteResponse obtenerPorDpi(@Parameter(description = "DPI de 13 dígitos.", example = "2547896320101") @PathVariable String dpi) {
         return service.buscarPorDpi(dpi);
     }
 
@@ -85,7 +88,7 @@ public class PacienteController {
             @ApiResponse(responseCode = "200", description = "Paciente encontrado"),
             @ApiResponse(responseCode = "404", description = "El paciente no existe")
     })
-    public PacienteResponse obtener(@PathVariable Long id) {
+    public PacienteResponse obtener(@Parameter(description = "Id del registro en «Pacientes» (debe existir).", example = "1") @PathVariable Long id) {
         return service.obtenerDetalle(id);
     }
 
@@ -115,7 +118,7 @@ public class PacienteController {
             @ApiResponse(responseCode = "409", description = "El DPI ya pertenece a otro paciente"),
             @ApiResponse(responseCode = "422", description = "Alergia o tipo de sangre inexistente")
     })
-    public PacienteResponse actualizar(@PathVariable Long id, @Valid @RequestBody PacienteRequest request) {
+    public PacienteResponse actualizar(@Parameter(description = "Id del registro en «Pacientes» (debe existir).", example = "1") @PathVariable Long id, @Valid @RequestBody PacienteRequest request) {
         return service.actualizar(id, request);
     }
 
@@ -128,7 +131,7 @@ public class PacienteController {
             @ApiResponse(responseCode = "404", description = "El paciente no existe o ya está inactivo"),
             @ApiResponse(responseCode = "422", description = "Tiene citas activas, hospitalización en curso, registro activo en emergencia o cuentas activas")
     })
-    public void eliminar(@PathVariable Long id) {
+    public void eliminar(@Parameter(description = "Id del registro en «Pacientes» (debe existir).", example = "1") @PathVariable Long id) {
         service.eliminar(id);
     }
 }
