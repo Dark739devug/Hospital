@@ -135,9 +135,9 @@ En producción, todo con HTTPS:
 
 | Componente | Servicio | URL |
 |---|---|---|
-| Backend | Render, Web Service con Docker (`hospital/Dockerfile`); el puerto lo asigna Render en `PORT` | [COMPLETAR: URL de la API] |
+| Backend | Render, Web Service con Docker (`hospital/Dockerfile`); el puerto lo asigna Render en `PORT` | https://hospital-api-5jqk.onrender.com |
 | Base de datos | Render Postgres; el esquema se carga con `psql` y `Hosp_postgres.sql` | (privada) |
-| Frontend | Vercel, carpeta `frontend/` (`vercel.json` redirige todas las rutas a `index.html`) | [COMPLETAR: URL del frontend] |
+| Frontend | Render Static Site, carpeta `frontend/` (regla de rewrite `/*` → `/index.html`; `vercel.json` queda para desplegar en Vercel si se prefiere) | https://hospital-web-lgmr.onrender.com |
 
 Detrás del proxy HTTPS de Render, `server.forward-headers-strategy=framework` hace que las URL generadas usen `https`, y Swagger usa un servidor relativo (`/`) para llamar a la API en el mismo dominio.
 
@@ -560,4 +560,4 @@ La entrega 1 fue un diseño previo a la implementación. Estas son las diferenci
 | Configuración JPA | `ddl-auto=validate` y `open-in-view=false` | `open-in-view=false`; no se fija `ddl-auto` (Hibernate no toca el esquema, que se crea a mano con el script SQL). |
 | Cuentas | No contempladas | Módulo de cuentas del paciente (`/api/cuentas`) enlazado a los pagos. |
 | Registro de usuarios | `POST /api/auth/register` | Igual (responde 201), y además CRUD de usuarios en `/api/usuarios` (solo ADMIN). |
-| Ejecución en la web | API y frontend publicados con HTTPS | API en Render (Docker) y frontend en Vercel, ambos con HTTPS: [COMPLETAR: URL]. |
+| Ejecución en la web | API y frontend publicados con HTTPS | API en Render (Docker) y frontend en Render Static Site, ambos con HTTPS: https://hospital-web-lgmr.onrender.com y https://hospital-api-5jqk.onrender.com. |
