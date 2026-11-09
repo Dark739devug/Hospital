@@ -1,26 +1,43 @@
 import { Outlet } from 'react-router-dom'
-import { Card, CardBody, Col, Row } from 'reactstrap'
+import imagenMedico from '../assets/now-ui/images/doctor.jpg'
+
+function Marca({ className = '' }) {
+  return (
+    <div className={`login-marca ${className}`.trim()}>
+      <svg viewBox="0 0 32 32" width="34" height="34" aria-hidden="true">
+        <circle cx="16" cy="16" r="16" fill="currentColor" />
+        <path className="login-marca-cruz" d="M13 7h6v6h6v6h-6v6h-6v-6H7v-6h6z" />
+      </svg>
+      <span>NovaMedic</span>
+    </div>
+  )
+}
 
 export default function AuthLayout() {
   return (
     <div className="login-fondo">
-      <div className="login-contenido">
-        <div className="text-center text-white mb-4">
-          <svg viewBox="0 0 24 24" width="44" height="44" fill="currentColor" aria-hidden="true">
-            <path d="M10 3h4v7h7v4h-7v7h-4v-7H3v-4h7z" />
-          </svg>
-          <h2 className="mb-0 mt-2">Hospital</h2>
-          <p className="mb-0">Sistema de gestión hospitalaria</p>
-        </div>
-        <Row className="w-100 justify-content-center">
-          <Col xs="12" sm="9" md="6" lg="4">
-            <Card className="card-login mb-0">
-              <CardBody>
-                <Outlet />
-              </CardBody>
-            </Card>
-          </Col>
-        </Row>
+      <div className="login-tarjeta">
+        <aside className="login-lateral">
+          <div className="login-lateral-imagen">
+            <img src={imagenMedico} alt="" />
+          </div>
+          <div className="login-lateral-info">
+            <Marca className="login-marca-clara" />
+            <div className="login-bienvenida">
+              <p className="login-bienvenida-saludo">
+                Bienvenido a <strong>NovaMedic</strong>
+              </p>
+              <p className="login-bienvenida-sistema">Sistema de gestión hospitalaria</p>
+            </div>
+          </div>
+        </aside>
+
+        <main className="login-panel">
+          <div className="login-panel-contenido">
+            <Marca />
+            <Outlet />
+          </div>
+        </main>
       </div>
     </div>
   )

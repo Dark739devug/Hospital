@@ -3,6 +3,9 @@ package com.example.hospital.citas;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -63,9 +66,9 @@ class CitasServiceImplTest {
         LocalTime hora = LocalTime.of(9, 0);
         CitasDTO dto = new CitasDTO(null, manana, hora, "  Control  ", null, 1L, 2L, 3L, null);
         when(pacienteRepository.findById(3L)).thenReturn(Optional.of(new Paciente()));
-        when(medicoRepository.findById(2L)).thenReturn(Optional.of(new Medico()));
+        when(medicoRepository.findByIdParaReservar(2L)).thenReturn(Optional.of(new Medico()));
         when(estadoCitaRepository.findById(1L)).thenReturn(Optional.of(estado(1L, "Programada")));
-        when(citasRepository.existsByIdMedicoAndFechaAndHoraAndActivoTrue(2L, manana, hora)).thenReturn(false);
+        when(citasRepository.existsByIdMedicoAndFechaAndHoraAndActivoTrueAndIdEstadoNotIn(eq(2L), eq(manana), eq(hora), anyCollection())).thenReturn(false);
         when(citasRepository.save(any(Citas.class))).thenAnswer(inv -> {
             Citas c = inv.getArgument(0);
             c.setIdCita(10L);
@@ -160,7 +163,7 @@ class CitasServiceImplTest {
 
     private void mockCatalogos(Long idEstado, String descripcionEstado) {
         when(pacienteRepository.findById(3L)).thenReturn(Optional.of(new Paciente()));
-        when(medicoRepository.findById(2L)).thenReturn(Optional.of(new Medico()));
+        when(medicoRepository.findByIdParaReservar(2L)).thenReturn(Optional.of(new Medico()));
         when(estadoCitaRepository.findById(idEstado)).thenReturn(Optional.of(estado(idEstado, descripcionEstado)));
     }
 
@@ -191,10 +194,27 @@ class CitasServiceImplTest {
     }
 
     @Test
+    void crear_lasCitasCanceladasONoAsistioNoOcupanElHorario() {
+        mockCatalogos(1L, "Programada");
+        when(estadoCitaRepository.findByDescripcionIgnoreCase("Cancelada")).thenReturn(Optional.of(estado(5L, "Cancelada")));
+        when(estadoCitaRepository.findByDescripcionIgnoreCase("No asistió")).thenReturn(Optional.of(estado(6L, "No asistió")));
+        LocalDate manana = LocalDate.now().plusDays(1);
+        LocalTime hora = LocalTime.of(9, 0);
+        // El chequeo de choque excluye las citas en estado Cancelada (5) y No asistió (6)
+        when(citasRepository.existsByIdMedicoAndFechaAndHoraAndActivoTrueAndIdEstadoNotIn(eq(2L), eq(manana), eq(hora),
+                argThat(ids -> ids.size() == 2 && ids.containsAll(List.of(5L, 6L))))).thenReturn(false);
+        when(citasRepository.save(any(Citas.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        service.crear(new CitasDTO(null, manana, hora, null, null, 1L, 2L, 3L, null));
+
+        verify(citasRepository).save(any(Citas.class));
+    }
+
+    @Test
     void crear_lanzaDuplicado409_siElMedicoYaTieneCitaEnEsaHora() {
         mockCatalogos(1L, "Programada");
         LocalDate manana = LocalDate.now().plusDays(1);
-        when(citasRepository.existsByIdMedicoAndFechaAndHoraAndActivoTrue(2L, manana, LocalTime.of(9, 0))).thenReturn(true);
+        when(citasRepository.existsByIdMedicoAndFechaAndHoraAndActivoTrueAndIdEstadoNotIn(eq(2L), eq(manana), eq(LocalTime.of(9, 0)), anyCollection())).thenReturn(true);
         CitasDTO dto = new CitasDTO(null, manana, LocalTime.of(9, 0), null, null, 1L, 2L, 3L, null);
 
         assertThrows(DuplicadoException.class, () -> service.crear(dto));

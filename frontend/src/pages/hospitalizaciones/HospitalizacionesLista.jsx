@@ -13,7 +13,7 @@ import { useApi } from '../../hooks/useApi.js'
 import { useDatosHospitalizacion } from '../../hooks/useDatosHospitalizacion.js'
 import { formatearFechaHora } from '../../utils/formato.js'
 import { nombreMedico, nombrePaciente } from '../citas/utilsCita.js'
-import { nombreHabitacion } from './utilsHospitalizacion.js'
+import { estaActiva, nombreHabitacion } from './utilsHospitalizacion.js'
 
 const TAMANO_PAGINA = 10
 const claseSelect = 'form-control'
@@ -91,7 +91,7 @@ export default function HospitalizacionesLista() {
           <Link to={`/hospitalizaciones/${h.idHospitalizacion}`}>
             Ver
           </Link>
-          {puedeEditar && h.idEstadoHosp === 1 && h.activo !== false && (
+          {puedeEditar && estaActiva(h, datos.idEstadoActiva) && h.activo !== false && (
             <Link to={`/hospitalizaciones/${h.idHospitalizacion}/editar`}>
               Editar
             </Link>

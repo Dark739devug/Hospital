@@ -1,5 +1,7 @@
 package com.example.hospital.medico.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.example.hospital.shared.catalogos.EstadosCatalogo;
 import com.example.hospital.shared.exception.DuplicadoException;
 import com.example.hospital.citas.CitasRepository;
@@ -21,6 +23,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class MedicoServiceImpl implements MedicoService {
+
+    private static final Logger log = LoggerFactory.getLogger(MedicoServiceImpl.class);
 
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
 
@@ -192,6 +196,7 @@ public class MedicoServiceImpl implements MedicoService {
 
         existente.setEstado(nuevoEstado);
         Medico actualizado = medicoRepository.save(existente);
+        log.info("Médico {} {}", id, Boolean.TRUE.equals(actualizado.getEstado()) ? "activado" : "desactivado");
         return mapToDTO(actualizado);
     }
 
@@ -215,6 +220,7 @@ public class MedicoServiceImpl implements MedicoService {
         // RN-MED-06: Borrado lógico sistemático
         existente.setEstado(false);
         medicoRepository.save(existente);
+        log.info("Médico {} desactivado", id);
     }
 
     private void validarDatosMedico(MedicoDTO dto, Long idActual) {

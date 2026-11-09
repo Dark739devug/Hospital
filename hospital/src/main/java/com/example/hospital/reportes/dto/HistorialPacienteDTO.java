@@ -25,9 +25,9 @@ public record HistorialPacienteDTO(
         List<HospitalizacionesDTO> hospitalizaciones,
         @Schema(description = "Ingresos a emergencia del paciente")
         List<EmergenciaDTO> emergencias,
-        @Schema(description = "Cuentas hospitalarias. Vacía si el usuario no es ADMIN/CAJERO (minimización de datos): ver `incluyeDatosFinancieros`")
+        @Schema(description = "Cuentas hospitalarias. Vacía si el usuario no es ADMIN (minimización de datos): ver `incluyeDatosFinancieros`")
         List<CuentasDTO> cuentas,
-        @Schema(description = "Facturas emitidas. Vacía si el usuario no es ADMIN/CAJERO (minimización de datos): ver `incluyeDatosFinancieros`")
+        @Schema(description = "Facturas emitidas. Vacía si el usuario no es ADMIN (minimización de datos): ver `incluyeDatosFinancieros`")
         List<FacturasDTO> facturas,
         @Schema(description = "Consultas realizadas en las citas del paciente")
         List<ConsultasDTO> consultas,
@@ -39,7 +39,7 @@ public record HistorialPacienteDTO(
         List<TratamientoDTO> tratamientos,
         @Schema(description = "Medicamentos recetados en cada tratamiento (idMedicamento, idTratamiento)")
         List<TratamientoMedicamentoDTO> medicamentosTratamiento,
-        @Schema(description = "true si la respuesta incluye cuentas y facturas (solo ADMIN o CAJERO); false si se omitieron por el rol del usuario")
+        @Schema(description = "true si la respuesta incluye cuentas y facturas (solo ADMIN: es el único rol con acceso a este endpoint que puede verlas); false si se omitieron por el rol del usuario")
         boolean incluyeDatosFinancieros,
         @Schema(description = "Eco del parámetro: true si se incluyen registros anulados (activo=false) en todas las secciones")
         boolean incluirAnulados

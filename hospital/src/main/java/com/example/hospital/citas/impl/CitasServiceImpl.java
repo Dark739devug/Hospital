@@ -1,5 +1,7 @@
 package com.example.hospital.citas.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.example.hospital.citas.Citas;
 import com.example.hospital.shared.exception.DuplicadoException;
 import com.example.hospital.shared.exception.RecursoNoEncontradoException;
@@ -21,14 +23,23 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 public class CitasServiceImpl implements CitasService {
 
+    private static final Logger log = LoggerFactory.getLogger(CitasServiceImpl.class);
+
     // RN-06: una cita solo puede nacer en uno de estos estados
     private static final Set<String> ESTADOS_INICIALES = Set.of("Programada", "Confirmada");
+
+    // Agenda: una cita está pendiente mientras no haya empezado ni llegado a un estado final
+    private static final Set<String> ESTADOS_PENDIENTES = Set.of("Programada", "Confirmada", "Reprogramada");
+
+    // RN-05: una cita en estos estados ya no ocupa el horario del médico
+    private static final Set<String> ESTADOS_QUE_LIBERAN_HORARIO = Set.of("Cancelada", "No asistió");
 
     private final CitasRepository citasRepository;
     private final PacienteRepository pacienteRepository;
@@ -114,7 +125,8 @@ public class CitasServiceImpl implements CitasService {
         }
 
         // RN-03: El médico debe existir y estar activo
-        Medico medico = medicoRepository.findById(dto.idMedico())
+        // Con bloqueo de fila: las validaciones de horario de este médico quedan serializadas (ver RN-05)
+        Medico medico = medicoRepository.findByIdParaReservar(dto.idMedico())
                 .orElseThrow(() -> new ReglaNegocioException("El médico con ID " + dto.idMedico() + " no existe"));
 
         if (medico.getEstado() != null && !medico.getEstado()) {
@@ -135,15 +147,17 @@ public class CitasServiceImpl implements CitasService {
                     + estado.getDescripcion() + "')");
         }
 
-        // RN-05: El médico no puede tener otra cita activa en la misma fecha y hora
+        // RN-05: El médico no puede tener otra cita activa en la misma fecha y hora. Las citas Canceladas o
+        // marcadas como No asistió liberan el horario aunque sigan activas.
+        List<Long> idsEstadoLibres = idsEstados(ESTADOS_QUE_LIBERAN_HORARIO);
         boolean medicoOcupado;
         if (idCitaActual == null) {
-            medicoOcupado = citasRepository.existsByIdMedicoAndFechaAndHoraAndActivoTrue(
-                    dto.idMedico(), dto.fecha(), dto.hora()
+            medicoOcupado = citasRepository.existsByIdMedicoAndFechaAndHoraAndActivoTrueAndIdEstadoNotIn(
+                    dto.idMedico(), dto.fecha(), dto.hora(), idsEstadoLibres
             );
         } else {
-            medicoOcupado = citasRepository.existsByIdMedicoAndFechaAndHoraAndActivoTrueAndIdCitaNot(
-                    dto.idMedico(), dto.fecha(), dto.hora(), idCitaActual
+            medicoOcupado = citasRepository.existsByIdMedicoAndFechaAndHoraAndActivoTrueAndIdEstadoNotInAndIdCitaNot(
+                    dto.idMedico(), dto.fecha(), dto.hora(), idsEstadoLibres, idCitaActual
             );
         }
 
@@ -234,6 +248,7 @@ public class CitasServiceImpl implements CitasService {
         }
 
         Citas guardada = citasRepository.save(entity);
+        log.info("Cita {} programada: paciente {}, médico {}, {} {}", guardada.getIdCita(), guardada.getIdPaciente(), guardada.getIdMedico(), guardada.getFecha(), guardada.getHora());
         return mapToDTO(guardada);
     }
 
@@ -269,6 +284,7 @@ public class CitasServiceImpl implements CitasService {
         }
 
         Citas actualizada = citasRepository.save(existente);
+        log.info("Cita {} actualizada: médico {}, {} {}", id, actualizada.getIdMedico(), actualizada.getFecha(), actualizada.getHora());
         return mapToDTO(actualizada);
     }
 
@@ -292,6 +308,7 @@ public class CitasServiceImpl implements CitasService {
 
         existente.setIdEstado(nuevoIdEstado);
         Citas guardada = citasRepository.save(existente);
+        log.info("Cita {} cambió al estado {}", id, nuevoIdEstado);
         return mapToDTO(guardada);
     }
 
@@ -313,6 +330,7 @@ public class CitasServiceImpl implements CitasService {
         // Borrado lógico
         existente.setActivo(false);
         citasRepository.save(existente);
+        log.info("Cita {} desactivada", id);
     }
 
     @Override
@@ -326,6 +344,40 @@ public class CitasServiceImpl implements CitasService {
         LocalDate dia = (fecha != null) ? fecha : LocalDate.now();
         return citasRepository.findByIdMedicoAndFechaAndActivoTrueOrderByHoraAsc(idMedico, dia)
                 .stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Ids de los estados de cita con esas descripciones, resueltos por descripción (no por id fijo); los que no
+     * existan en el catálogo se omiten. Nunca vacía: con lista vacía, `NOT IN ()` no es SQL válido.
+     */
+    private List<Long> idsEstados(Set<String> descripciones) {
+        List<Long> ids = descripciones.stream()
+                .map(estadoCitaRepository::findByDescripcionIgnoreCase)
+                .flatMap(Optional::stream)
+                .map(EstadoCita::getIdEstado)
+                .collect(Collectors.toList());
+        return ids.isEmpty() ? List.of(-1L) : ids;
+    }
+
+    @Override
+    public List<CitasDTO> pendientes(Long idMedico, LocalDate desde, LocalDate hasta) {
+        if (desde != null && hasta != null && desde.isAfter(hasta)) {
+            throw new ReglaNegocioException("La fecha inicial (desde) no puede ser posterior a la fecha final (hasta)");
+        }
+        if (idMedico != null && !medicoRepository.existsById(idMedico)) {
+            throw new RecursoNoEncontradoException("No existe el médico con ID: " + idMedico);
+        }
+        List<Long> idsPendientes = idsEstados(ESTADOS_PENDIENTES);
+        if (idsPendientes.isEmpty()) {
+            return List.of();
+        }
+        return citasRepository.findByActivoTrueAndIdEstadoInOrderByFechaAscHoraAsc(idsPendientes)
+                .stream()
+                .filter(c -> idMedico == null || idMedico.equals(c.getIdMedico()))
+                .filter(c -> desde == null || !c.getFecha().isBefore(desde))
+                .filter(c -> hasta == null || !c.getFecha().isAfter(hasta))
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }

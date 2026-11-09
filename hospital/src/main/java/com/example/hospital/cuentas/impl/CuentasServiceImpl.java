@@ -1,5 +1,7 @@
 package com.example.hospital.cuentas.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.example.hospital.cuentas.Cuentas;
 import com.example.hospital.cuentas.CuentasRepository;
 import com.example.hospital.cuentas.CuentasService;
@@ -31,6 +33,8 @@ import java.util.stream.Collectors;
  */
 @Service
 public class CuentasServiceImpl implements CuentasService {
+
+    private static final Logger log = LoggerFactory.getLogger(CuentasServiceImpl.class);
 
     public static final String ESTADO_ABIERTA = "Abierta";
     public static final String ESTADO_CERRADA = "Cerrada";
@@ -171,7 +175,9 @@ public class CuentasServiceImpl implements CuentasService {
         entity.setEstado(ESTADO_ABIERTA);
         entity.setSaldo(dto.saldo() != null ? dto.saldo() : BigDecimal.ZERO);
         entity.setActivo(true);
-        return mapToDTO(cuentasRepository.save(entity));
+        Cuentas guardada = cuentasRepository.save(entity);
+        log.info("Cuenta {} abierta: paciente {}, hospitalización {}", guardada.getIdCuenta(), guardada.getIdPaciente(), guardada.getIdHospitalizacion());
+        return mapToDTO(guardada);
     }
 
     @Override
@@ -243,6 +249,7 @@ public class CuentasServiceImpl implements CuentasService {
         } else if (nuevo.signum() > 0 && ESTADO_LIQUIDADA.equalsIgnoreCase(existente.getEstado())) {
             existente.setEstado(ESTADO_ABIERTA);
         }
+        log.info("Saldo de la cuenta {} ajustado en {}: nuevo saldo {}", id, montoAjuste, existente.getSaldo());
         return mapToDTO(cuentasRepository.save(existente));
     }
 
@@ -262,6 +269,7 @@ public class CuentasServiceImpl implements CuentasService {
         }
         existente.setActivo(false);
         cuentasRepository.save(existente);
+        log.info("Cuenta {} desactivada", id);
     }
 
     private Cuentas buscarEntidad(Long id) {

@@ -1,5 +1,7 @@
 package com.example.hospital.usuarios.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.example.hospital.rol.Rol;
 import com.example.hospital.rol.RolRepository;
 import com.example.hospital.shared.exception.DuplicadoException;
@@ -30,6 +32,8 @@ import java.util.stream.Collectors;
  */
 @Service
 public class UsuariosServiceImpl implements UsuariosService {
+
+    private static final Logger log = LoggerFactory.getLogger(UsuariosServiceImpl.class);
 
     public static final int LARGO_MINIMO_CLAVE = 8;
     public static final String ROL_ADMIN = "ADMIN";
@@ -84,7 +88,9 @@ public class UsuariosServiceImpl implements UsuariosService {
         usuario.setContrasenaHash(passwordEncoder.encode(dto.password()));
         usuario.setEstado(dto.estado() != null ? dto.estado() : true);
         usuario.setIdRol(dto.idRol());
-        return mapToDTO(usuariosRepository.save(usuario));
+        Usuarios guardado = usuariosRepository.save(usuario);
+        log.info("Usuario '{}' creado con el rol {} (id {})", guardado.getNombreUsuario(), guardado.getIdRol(), guardado.getIdUsuario());
+        return mapToDTO(guardado);
     }
 
     @Override
@@ -124,6 +130,7 @@ public class UsuariosServiceImpl implements UsuariosService {
         if (dto.idRol() != null) {
             existente.setIdRol(dto.idRol());
         }
+        log.info("Usuario {} actualizado (rol: {}, estado: {}, contraseña cambiada: {})", id, existente.getIdRol(), existente.getEstado(), dto.password() != null && !dto.password().isBlank());
         return mapToDTO(usuariosRepository.save(existente));
     }
 
@@ -136,6 +143,7 @@ public class UsuariosServiceImpl implements UsuariosService {
         }
         usuario.setEstado(false);
         usuariosRepository.save(usuario);
+        log.info("Usuario {} desactivado", id);
     }
 
     /**

@@ -376,7 +376,9 @@ CREATE TABLE cuentas (
                          fecha_apertura TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                          estado VARCHAR(20) NOT NULL DEFAULT 'Abierta',
                          saldo DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-                         activo BOOLEAN NOT NULL DEFAULT TRUE
+                         activo BOOLEAN NOT NULL DEFAULT TRUE,
+                         CONSTRAINT ck_cuentas_estado CHECK (estado IN ('Abierta', 'Cerrada', 'Liquidada')),
+                         CONSTRAINT ck_cuentas_saldo CHECK (saldo >= 0)
 );
 
 CREATE TABLE pagos (
@@ -429,9 +431,23 @@ CREATE INDEX ix_pagos_factura ON pagos(id_factura);
 CREATE INDEX ix_pagos_cuenta ON pagos(id_cuenta);
 CREATE INDEX ix_pagos_metodo ON pagos(id_metodo_pago);
 
+-- Agenda del médico, choque de horario y citas del día
+CREATE INDEX ix_citas_medico_fecha ON citas(id_medico, fecha, hora);
+CREATE INDEX ix_citas_fecha ON citas(fecha);
+CREATE INDEX ix_habitacion_tipo ON habitacion(id_tipo_habitacion);
+-- Tablas de enlace: la llave primaria empieza por la otra columna
+CREATE INDEX ix_medico_esp_medico ON medico_especialidades(id_medico);
+CREATE INDEX ix_diag_consulta_consulta ON diagnostico_consulta(id_consulta);
+CREATE INDEX ix_trat_med_tratamiento ON tratamiento_medicamento(id_tratamiento);
+
+-- Unicidades que el backend valida sin distinguir mayúsculas
+CREATE UNIQUE INDEX ux_triaje_nivel ON triaje(lower(trim(nivel_de_emergencia)));
+CREATE UNIQUE INDEX ux_medico_email ON medico(lower(email)) WHERE email IS NOT NULL AND email <> '';
+
 -- =====================================================
 -- DATOS INICIALES EN CATALOGOS (nombres de tabla/columna reales)
--- Los IDs 1,2,3... los usa el codigo (estados de hospitalizacion, habitacion, factura).
+-- El backend busca los estados por su DESCRIPCION (EstadosCatalogo, EstadoCitaServiceImpl), no por id:
+-- no renombre los estados base (Activa, Alta, Pendiente, Pagada, Cancelada, Disponible, Ocupada, ...).
 -- Los roles los crea DataInitializer al arrancar la API.
 -- =====================================================
 INSERT INTO tipo_sangre (nombre, descripcion) VALUES

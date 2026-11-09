@@ -2,7 +2,7 @@
  * Convierte cualquier error de axios en { status, message, detalles }.
  * - detalles: mapa campo -> mensaje (solo en 400 de validación).
  * - El backend responde { timestamp, status, error, message, path, detalles }.
- *   Excepción: el login fallido devuelve 401 con texto plano.
+ *   El login fallido también usa este formato (401 con `message`).
  */
 export function normalizarError(error) {
   if (!error?.response) {

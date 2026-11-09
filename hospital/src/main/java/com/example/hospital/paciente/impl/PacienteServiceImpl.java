@@ -1,5 +1,7 @@
 package com.example.hospital.paciente.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.example.hospital.shared.catalogos.EstadosCatalogo;
 import com.example.hospital.alergias.Alergias;
 import com.example.hospital.alergias.AlergiasRepository;
@@ -30,6 +32,8 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class PacienteServiceImpl implements PacienteService {
+
+    private static final Logger log = LoggerFactory.getLogger(PacienteServiceImpl.class);
 
     private final PacienteRepository repository;
     private final AlergiasRepository alergiasRepository;
@@ -140,7 +144,10 @@ public class PacienteServiceImpl implements PacienteService {
         Paciente nuevo = mapper.toEntity(request);
         nuevo.setFechaRegistro(LocalDateTime.now());   // Asignado por el servidor
         nuevo.setActivo(true);
-        return mapper.toResponse(repository.save(nuevo));
+        Paciente guardado = repository.save(nuevo);
+        // Solo el id: el log no debe contener datos personales del paciente
+        log.info("Paciente {} registrado", guardado.getIdPaciente());
+        return mapper.toResponse(guardado);
     }
 
     @Override
@@ -178,6 +185,7 @@ public class PacienteServiceImpl implements PacienteService {
         // Borrado lógico sistemático
         existente.setActivo(false);
         repository.save(existente);
+        log.info("Paciente {} desactivado", id);
     }
 
     private Paciente buscarOLanzar(Long id) {
